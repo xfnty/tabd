@@ -20,6 +20,8 @@ typedef unsigned char UCHAR, *PUCHAR, BYTE, *PBYTE, BOOLEAN;
 typedef unsigned long ULONG;
 typedef unsigned short USHORT;
 typedef unsigned short WCHAR;
+typedef unsigned short WORD;
+typedef unsigned int UINT;
 typedef const char *PCSTR, *LPCSTR;
 typedef const WCHAR *PCWSTR;
 typedef char *PSTR;
@@ -87,6 +89,34 @@ typedef struct _HIDP_CAPS {
   USHORT NumberFeatureValueCaps;
   USHORT NumberFeatureDataIndices;
 } HIDP_CAPS, *PHIDP_CAPS;
+typedef struct tagMOUSEINPUT {
+  LONG      dx;
+  LONG      dy;
+  DWORD     mouseData;
+  DWORD     dwFlags;
+  DWORD     time;
+  ULONG_PTR dwExtraInfo;
+} MOUSEINPUT, *PMOUSEINPUT, *LPMOUSEINPUT;
+typedef struct tagKEYBDINPUT {
+  WORD      wVk;
+  WORD      wScan;
+  DWORD     dwFlags;
+  DWORD     time;
+  ULONG_PTR dwExtraInfo;
+} KEYBDINPUT, *PKEYBDINPUT, *LPKEYBDINPUT;
+typedef struct tagHARDWAREINPUT {
+  DWORD uMsg;
+  WORD  wParamL;
+  WORD  wParamH;
+} HARDWAREINPUT, *PHARDWAREINPUT, *LPHARDWAREINPUT;
+typedef struct tagINPUT {
+  DWORD type;
+  union {
+    MOUSEINPUT    mi;
+    KEYBDINPUT    ki;
+    HARDWAREINPUT hi;
+  };
+} INPUT, *PINPUT, *LPINPUT;
 
 #define WINAPI                             __stdcall
 #define ATTACH_PARENT_PROCESS              ((DWORD)-1)
@@ -105,6 +135,15 @@ typedef struct _HIDP_CAPS {
 #define WAIT_ABANDONED                     0x00000080L
 #define WAIT_OBJECT_0                      0x00000000L
 #define WAIT_TIMEOUT                       0x00000102L
+#define INPUT_MOUSE                        0
+#define INPUT_KEYBOARD                     1
+#define INPUT_HARDWARE                     2
+#define MOUSEEVENTF_MOVE                   0x0001
+#define MOUSEEVENTF_LEFTDOWN               0x0002
+#define MOUSEEVENTF_LEFTUP                 0x0004
+#define MOUSEEVENTF_ABSOLUTE               0x8000
+#define SM_CXSCREEN                        0
+#define SM_CYSCREEN                        1
 #define HIDP_STATUS_SUCCESS                ((NTSTATUS)(0x11 << 16))
 #define HIDP_STATUS_INVALID_PREPARSED_DATA ((NTSTATUS)(((0xC) << 28) | (0x11 << 16) | 1))
 #define GUID_DEVINTERFACE_HID                 (GUID){ 0x4D1E55B2, 0xF16F, 0x11CF, { 0x88, 0xCB, 0x00, 0x11, 0x11, 0x00, 0x00, 0x30 } }
@@ -162,6 +201,14 @@ DWORD WaitForSingleObject(
 );
 BOOL CloseHandle(HANDLE hObject);
 
+/* user32 */
+int GetSystemMetrics(int nIndex);
+UINT SendInput(
+    UINT    cInputs,
+    LPINPUT pInputs,
+    int     cbSize
+);
+
 /* vcruntime */
 int __cdecl __stdio_common_vsnprintf_s(
     unsigned __int64 _Options,
@@ -199,10 +246,6 @@ BOOLEAN HidD_SetFeature(
   PVOID  ReportBuffer,
   ULONG  ReportBufferLength
 );
-
-/* winusb */
-BOOL WinUsb_Initialize(HANDLE DeviceHandle, PWINUSB_INTERFACE_HANDLE InterfaceHandle);
-BOOL WinUsb_Free(WINUSB_INTERFACE_HANDLE InterfaceHandle);
 
 /* setupapi */
 HDEVINFO SetupDiGetClassDevsA(

@@ -2,12 +2,12 @@
 setlocal enableextensions enabledelayedexpansion
 for /F "tokens=1,2 delims=#" %%a in ('"prompt #$H#$E# & echo on & for %%b in (1) do rem"') do set esc=%%b
 
-set project_name=TinyWacomDriver
+set project_name=TinyTabletDriver
 
 set root_dir=%~dp0
 set output_dir=%~dp0out\
-set dist_dir=%~dp0dist\
 set temp_dir=%TEMP%\%project_name%\
+set dist_dir=%temp_dir%dist\
 
 for %%a in (%*) do set %%a=1
 if "%1"=="" (call :PrintUsage && exit /b 0)
@@ -36,7 +36,7 @@ set unity=%temp_dir%unity
 set cflags=/nologo /std:c11 /Wall /wd4820 /wd5045 /wd4711 /Z7 /O2
 set lflags=/debug /subsystem:windows /INCREMENTAL:NO /entry:_start
 set oflags=/Fo:"%unity%.obj" /Fe:"%output_dir%%project_name%.exe"
-set links=kernel32.lib winusb.lib hid.lib setupapi.lib ucrt.lib vcruntime.lib
+set links=kernel32.lib user32.lib hid.lib setupapi.lib ucrt.lib vcruntime.lib
 set command=cl %cflags% "%unity%.c" %links% %oflags% /link %lflags%
 echo // %command%> "%unity%.c"
 for /r "%root_dir%src" %%a in (*.c) do echo #include "%%a">> "%unity%.c"
@@ -69,10 +69,12 @@ if not !errorlevel! == 0 (
 exit /b 0
 
 :Dist
+rmdir /q /s "%dist_dir%." "%output_dir%." 2> nul
+call :Build || exit /b 1
 mkdir "%dist_dir%." 2> nul
 copy /Y "C:\Windows\System32\vcruntime140.dll" "%output_dir%." 1> nul
-tar -acf "%dist_dir%%project_name%.zip" -C "%output_dir%." * || exit /b 1
-for %%g in (%dist_dir%%project_name%.zip) do ^
+tar -acf "%root_dir%%project_name%.zip" -C "%output_dir%." * || exit /b 1
+for %%g in (%root_dir%%project_name%.zip) do ^
 for /f "tokens=1,2" %%s in ('robocopy %%~dpg. %%~dpg. %%~nxg /l /nocopy /is /njh /njs /ndl /nc') do (
     echo Package size is !esc![1;96m%%s!esc![0m bytes.
 )
@@ -80,4 +82,5 @@ exit /b 0
 
 :Clean
 rmdir /s /q "%output_dir%." "%temp_dir%." "%dist_dir%." 2> nul
+del /q /s /f "%root_dir%%project_name%.zip" 2> nul
 exit /b 0

@@ -2,9 +2,17 @@
 
 #define countof(_a) (sizeof(_a)/sizeof((_a)[0]))
 
+typedef struct {
+    float x, y;
+    float pressure;
+    BYTE down : 1;
+    BYTE buttons[2];
+} PenInput;
+
 void _start(void);
 static void WriteConsoleAFormat(HANDLE hConsole, const char *format, ...);
 static HANDLE FindHID(USHORT vid, USHORT pid);
+static BOOL ReadPenInput(HANDLE device, PenInput *input);
 
 void _start(void) {
     AttachConsole(ATTACH_PARENT_PROCESS);
@@ -21,38 +29,18 @@ void _start(void) {
         ExitProcess(2);
     }
 
-    OVERLAPPED ol = {0};
-    for (int i = 0; i < 200; i++) {
-        unsigned char buffer[10] = {0};
-
-        DWORD bytes_read = 0;
-        BOOL ok = ReadFile(device, buffer, sizeof(buffer), &bytes_read, &ol);
-        DWORD err = GetLastError();
-        if (!ok && err != ERROR_IO_PENDING) {
-            WriteConsoleAFormat(hcon, "error %u\n", err);
-            break;
-        }
-
-        GetOverlappedResult(device, &ol, &bytes_read, 1);
-
-        for (unsigned int j = 0; j < sizeof(buffer); j++)
-            WriteConsoleAFormat(hcon, "%02hhx ", buffer[j]);
-        WriteConsoleAFormat(hcon, "\n");
-
-        unsigned char f = buffer[1];
-        unsigned short *x = (unsigned short*)(buffer + 2);
-        unsigned short *y = (unsigned short*)(buffer + 4);
-        unsigned short *p = (unsigned short*)(buffer + 6);
-        WriteConsoleAFormat(
-            hcon,
-            "T:%d 1:%d 2:%d %.03f %.03f %.02f\n\n",
-            (f&1)!=0,
-            (f&2)!=0,
-            (f&4)!=0,
-            *x / 21600.0f,
-            *y / 13500.0f,
-            *p / 2047.0f
-        );
+    for (PenInput pi = {0}, ppi = {0}; ReadPenInput(device, &pi); ppi = pi) {
+        INPUT input = {
+            .type = INPUT_MOUSE,
+            .mi = (MOUSEINPUT){
+                .dwFlags = MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE
+                    | ((pi.down && !ppi.down) ? (MOUSEEVENTF_LEFTDOWN) : (0))
+                    | ((!pi.down && ppi.down) ? (MOUSEEVENTF_LEFTUP) : (0)),
+                .dx = (LONG)(pi.x * 65535),
+                .dy = (LONG)(pi.y * 65535),
+            }
+        };
+        SendInput(1, &input, sizeof(input));
     }
 
     CloseHandle(device);
@@ -128,4 +116,30 @@ HANDLE FindHID(USHORT vid, USHORT pid) {
     }
 
     return dev;
+}
+
+BOOL ReadPenInput(HANDLE device, PenInput *input) {
+    Start:
+    unsigned char buffer[10] = {0};
+
+    OVERLAPPED ol = {0};
+    DWORD bytes_read = 0;
+    BOOL ok = ReadFile(device, buffer, sizeof(buffer), &bytes_read, &ol);
+    DWORD err = GetLastError();
+    if (!ok && err != ERROR_IO_PENDING)
+        return 0;
+
+    GetOverlappedResult(device, &ol, &bytes_read, 1);
+
+    if (buffer[0] != 0x02 || buffer[1] == 0x00 || buffer[1] == 0x80)
+        goto Start;
+
+    *input = (PenInput){
+        .x = (float)(*(unsigned short*)(buffer + 2)) / 21600.0f,
+        .y = (float)(*(unsigned short*)(buffer + 4)) / 13500.0f,
+        .pressure = *(unsigned short*)(buffer + 6),
+        .down = buffer[1] & 0x01,
+        .buttons = { buffer[1] & 0x02, buffer[1] & 0x04 },
+    };
+    return 1;
 }
