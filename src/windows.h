@@ -80,8 +80,10 @@ typedef struct _HIDD_ATTRIBUTES {
 #define FILE_FLAG_OVERLAPPED    0x40000000
 #define ERROR_NO_MORE_ITEMS     259
 #define ERROR_IO_PENDING        997
-#define GUID_DEVINTERFACE_HID        (GUID){ 0x4D1E55B2, 0xF16F, 0x11CF, { 0x88, 0xCB, 0x00, 0x11, 0x11, 0x00, 0x00, 0x30 } }
-#define GUID_DEVINTERFACE_USB_DEVICE (GUID){ 0xA5DCBF10, 0x6530, 0x11D2, { 0x90, 0x1F, 0x00, 0xC0, 0x4F, 0xB9, 0x51, 0xED } }
+#define WAIT_ABANDONED          0x00000080L
+#define WAIT_OBJECT_0           0x00000000L
+#define WAIT_TIMEOUT            0x00000102L
+#define GUID_DEVINTERFACE_HID                 (GUID){ 0x4D1E55B2, 0xF16F, 0x11CF, { 0x88, 0xCB, 0x00, 0x11, 0x11, 0x00, 0x00, 0x30 } }
 
 #define va_start(_list, _arg) ((void)__va_start(&(_list), (_arg)))
 #define va_end(_list) ((void)((_list) = (va_list)0))
@@ -118,11 +120,21 @@ BOOL ReadFile(
     LPDWORD      lpNumberOfBytesRead,
     LPOVERLAPPED lpOverlapped
 );
+HANDLE CreateEventA(
+    PVOID  lpEventAttributes,
+    BOOL   bManualReset,
+    BOOL   bInitialState,
+    LPCSTR lpName
+);
 BOOL GetOverlappedResult(
     HANDLE       hFile,
     LPOVERLAPPED lpOverlapped,
     LPDWORD      lpNumberOfBytesTransferred,
     BOOL         bWait
+);
+DWORD WaitForSingleObject(
+    HANDLE hHandle,
+    DWORD  dwMilliseconds
 );
 BOOL CloseHandle(HANDLE hObject);
 
@@ -142,9 +154,10 @@ BOOLEAN HidD_GetAttributes(
     HANDLE           HidDeviceObject,
     PHIDD_ATTRIBUTES Attributes
 );
-BOOLEAN HidD_SetNumInputBuffers(
-    HANDLE HidDeviceObject,
-    ULONG  NumberBuffers
+BOOLEAN HidD_SetFeature(
+  HANDLE HidDeviceObject,
+  PVOID  ReportBuffer,
+  ULONG  ReportBufferLength
 );
 
 /* winusb */
@@ -172,4 +185,9 @@ BOOL SetupDiGetDeviceInterfaceDetailA(
     DWORD                              DeviceInterfaceDetailDataSize,
     PDWORD                             RequiredSize,
     PSP_DEVINFO_DATA                   DeviceInfoData
+);
+BOOL SetupDiEnumDeviceInfo(
+    HDEVINFO         DeviceInfoSet,
+    DWORD            MemberIndex,
+    PSP_DEVINFO_DATA DeviceInfoData
 );

@@ -4,38 +4,40 @@
 
 void _start(void);
 static void WriteConsoleAFormat(HANDLE hConsole, const char *format, ...);
-static HANDLE FindDevice(const GUID *guid, USHORT vendor, USHORT product);
+static HANDLE FindHID(USHORT vid, USHORT pid);
 
 void _start(void) {
     AttachConsole(ATTACH_PARENT_PROCESS);
     HANDLE hcon = GetStdHandle(STD_OUTPUT_HANDLE);
 
-    HANDLE tablet = FindDevice(&GUID_DEVINTERFACE_HID, 1386, 891);
-    if (tablet == INVALID_HANDLE_VALUE) {
+    HANDLE device = FindHID(1386, 891);
+    if (device == INVALID_HANDLE_VALUE) {
         WriteConsoleAFormat(hcon, "Tablet not connected.\n");
         ExitProcess(1);
     }
 
-    WINUSB_INTERFACE_HANDLE usb;
-    SetLastError(0);
-    if (!WinUsb_Initialize(tablet, &usb)) {
-        WriteConsoleAFormat(hcon, "WinUSB failed with code %u\n", GetLastError());
+    if (!HidD_SetFeature(device, (BYTE[]){ 0x02, 0x02 }, 2)) {
+        WriteConsoleAFormat(hcon, "Failed to set features on device (%d).\n", GetLastError());
+        ExitProcess(2);
     }
 
     OVERLAPPED ol = {0};
-
     for (int i = 0; i < 200; i++) {
         unsigned char buffer[10] = {0};
 
         DWORD bytes_read = 0;
-        BOOL ok = ReadFile(tablet, buffer, sizeof(buffer), &bytes_read, &ol);
+        BOOL ok = ReadFile(device, buffer, sizeof(buffer), &bytes_read, &ol);
         DWORD err = GetLastError();
         if (!ok && err != ERROR_IO_PENDING) {
             WriteConsoleAFormat(hcon, "error %u\n", err);
             break;
         }
 
-        GetOverlappedResult(tablet, &ol, &bytes_read, 1);
+        GetOverlappedResult(device, &ol, &bytes_read, 1);
+
+        for (unsigned int j = 0; j < sizeof(buffer); j++)
+            WriteConsoleAFormat(hcon, "%02hhx ", buffer[j]);
+        WriteConsoleAFormat(hcon, "\n");
 
         unsigned char f = buffer[1];
         unsigned short *x = (unsigned short*)(buffer + 2);
@@ -43,7 +45,7 @@ void _start(void) {
         unsigned short *p = (unsigned short*)(buffer + 6);
         WriteConsoleAFormat(
             hcon,
-            "T:%d 1:%d 2:%d %.03f %.03f %.02f\n",
+            "T:%d 1:%d 2:%d %.03f %.03f %.02f\n\n",
             (f&1)!=0,
             (f&2)!=0,
             (f&4)!=0,
@@ -53,7 +55,9 @@ void _start(void) {
         );
     }
 
-    CloseHandle(tablet);
+    // TODO: restore features
+
+    CloseHandle(device);
     ExitProcess(0);
 }
 
@@ -78,11 +82,11 @@ void WriteConsoleAFormat(HANDLE hConsole, const char *format, ...) {
     WriteConsoleA(hConsole, buffer, l, 0, 0);
 }
 
-HANDLE FindDevice(const GUID *guid, USHORT vendor, USHORT product) {
+HANDLE FindHID(USHORT vid, USHORT pid) {
     HANDLE dev = INVALID_HANDLE_VALUE;
 
     HDEVINFO devs = SetupDiGetClassDevsA(
-        guid,
+        &GUID_DEVINTERFACE_HID,
         0,
         0,
         DIGCF_DEVICEINTERFACE | DIGCF_PRESENT
@@ -92,17 +96,17 @@ HANDLE FindDevice(const GUID *guid, USHORT vendor, USHORT product) {
 
     for (int i = 0; ; i++) {
         SP_DEVICE_INTERFACE_DATA iface_data = { .cbSize = sizeof(SP_DEVICE_INTERFACE_DATA) };
-        SetupDiEnumDeviceInterfaces(devs, 0, guid, i, &iface_data);
+        SetupDiEnumDeviceInterfaces(devs, 0, &GUID_DEVINTERFACE_HID, i, &iface_data);
         if (GetLastError() == ERROR_NO_MORE_ITEMS)
             break;
 
-        char devdetailb[1024] = {0};
-        PSP_DEVICE_INTERFACE_DETAIL_DATA_A devdetail = (void*)devdetailb;
-        devdetail->cbSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA_A);
-        SetupDiGetDeviceInterfaceDetailA(devs, &iface_data, devdetail, 1023, 0, 0);
+        char details_buffer[1024] = {0};
+        PSP_DEVICE_INTERFACE_DETAIL_DATA_A details = (void*)details_buffer;
+        details->cbSize = sizeof(SP_DEVICE_INTERFACE_DETAIL_DATA_A);
+        SetupDiGetDeviceInterfaceDetailA(devs, &iface_data, details, 1023, 0, 0);
 
         dev = CreateFileA(
-            devdetail->DevicePath,
+            details->DevicePath,
             GENERIC_READ,
             0,
             0,
@@ -117,7 +121,7 @@ HANDLE FindDevice(const GUID *guid, USHORT vendor, USHORT product) {
         if (!HidD_GetAttributes(dev, &attrs))
             goto Continue;
 
-        if (attrs.VendorID == vendor && attrs.ProductID == product)
+        if (attrs.VendorID == vid && attrs.ProductID == pid)
             break;
 
         Continue:
