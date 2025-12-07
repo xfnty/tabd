@@ -499,6 +499,7 @@ typedef struct tagRECT {
 #define NIF_ICON                           0x00000002
 #define NIF_TIP                            0x00000004
 #define NIM_ADD                            0x00000000
+#define NIM_MODIFY                         0x00000001
 #define NIM_DELETE                         0x00000002
 #define IDI_APPLICATION                    32512
 #define MF_STRING                          0x00000000L
@@ -625,6 +626,7 @@ int GetSystemMetrics(int nIndex);
 UINT SendInput(UINT cInputs, LPINPUT pInputs, int cbSize);
 BOOL PeekMessageA(LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin, UINT wMsgFilterMax, UINT wRemoveMsg);
 BOOL GetMessageA(LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin, UINT wMsgFilterMax);
+BOOL PostMessageA(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
 int MessageBoxA(HWND hWnd, LPCSTR lpText, LPCSTR lpCaption, UINT uType);
 DWORD MsgWaitForMultipleObjects(
     DWORD        nCount,

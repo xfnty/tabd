@@ -9,7 +9,7 @@ Status:
 - show tray icon with exit menu button
 - detect when tablet is connected/disconnected
 - sleep on all inputs (no active waiting)
-- have qute icon
+- indicate active/inactive states and have icons for them
 
 Build requirements:
 - [Visual Studio Build Tools][vstools] (MSVC, Windows SDK)

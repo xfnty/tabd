@@ -4,6 +4,7 @@
 /* macros */
 #define WNDCLASSNAME "TinyTabletDriver"
 #define WM_SHOW_TRAY_MENU (WM_USER+1)
+#define WM_DEVICE_CHANGED (WM_USER+2)
 #define TRAY_MENU_EXIT_ITEM 0
 #define TABLET_VID 1386
 #define TABLET_PID 891
@@ -38,6 +39,7 @@ static DWORD CALLBACK DeviceChangedCallback(
 /* variables */
 static BOOL was_exit_requested;
 static HANDLE s_stdout;
+static HINSTANCE s_hinstance;
 static CRITICAL_SECTION s_crash_lock;
 static HWND s_hidden_window;
 static HMENU s_tray_menu;
@@ -57,15 +59,15 @@ void _start(void) {
         SetUnhandledExceptionFilter(GlobalExceptionHandler);
     }
 
-    HINSTANCE hinstance = GetModuleHandleA(0);
+    s_hinstance = GetModuleHandleA(0);
     WNDCLASSEXA cls = {
         .cbSize = sizeof(cls),
-        .hInstance = hinstance,
+        .hInstance = s_hinstance,
         .lpszClassName = WNDCLASSNAME,
         .lpfnWndProc = TrayWindowEventHandler,
     };
     ASSERT(RegisterClassExA(&cls));
-    s_hidden_window = CreateWindowExA(0, WNDCLASSNAME, 0, 0, 0, 0, 0, 0, 0, 0, hinstance, 0);
+    s_hidden_window = CreateWindowExA(0, WNDCLASSNAME, 0, 0, 0, 0, 0, 0, 0, 0, s_hinstance, 0);
     ASSERT(s_hidden_window);
 
     s_tray_menu = CreatePopupMenu();
@@ -77,9 +79,9 @@ void _start(void) {
         .hWnd = s_hidden_window,
         .uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP,
         .uCallbackMessage = WM_SHOW_TRAY_MENU,
-        .hIcon = LoadIconA(hinstance, MAKEINTRESOURCEA(IDI_APPICON)),
-        .szTip = { 'T','i','n','y',' ','T','a','b','l','e','t',' ','D','r','i','v','e','r','\0' },
+        .hIcon = LoadIconA(s_hinstance, MAKEINTRESOURCEA(IDI_TRAYICON_OFFLINE)),
     };
+    FormatTextA(s_tray_icon_data.szTip, COUNTOF(s_tray_icon_data.szTip), "Tiny Tablet Driver");
     ASSERT(Shell_NotifyIconA(NIM_ADD, &s_tray_icon_data));
 
     s_input_thread = CreateThread(0, 0, InputThreadProc, 0, 0, &s_input_thread_id);
@@ -263,8 +265,9 @@ DWORD WINAPI InputThreadProc(LPVOID arg) {
                 && attrs.ProductID == TABLET_PID
                 && HidD_SetFeature(ctx.device, (BYTE[]){ 0x02, 0x02 }, 2);
             if (valid) {
-                Println("Connected Wacom CTL-672 tablet.");
+                PostMessageA(s_hidden_window, WM_DEVICE_CHANGED, 0, true);
                 SetEvent(ctx.device_connected_event);
+                Println("Connected Wacom CTL-672 tablet.");
                 break;
             }
         }
@@ -319,18 +322,9 @@ DWORD WINAPI InputThreadProc(LPVOID arg) {
         }
 
         ctx.device = INVALID_HANDLE_VALUE;
-        Println("Tablet lost.");
+        PostMessageA(s_hidden_window, WM_DEVICE_CHANGED, 0, false);
         ResetEvent(ctx.device_connected_event);
-    }
-
-    while (true) {
-        DWORD wait = MsgWaitForMultipleObjects(1, &ctx.overlapped.hEvent, false, INFINITE, QS_ALLINPUT);
-        if (wait == WAIT_OBJECT_0) {
-            // read packet
-        } else if (wait == WAIT_OBJECT_0 + 1) {
-            if (GetMessageA(&m, (HWND)-1, 0, 0) && m.message == WM_QUIT)
-                break;
-        }
+        Println("Tablet lost.");
     }
 
     return 0;
@@ -348,6 +342,22 @@ LRESULT TrayWindowEventHandler(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             SetForegroundWindow(s_hidden_window);
             TrackPopupMenu(s_tray_menu, 0, cursor.x, cursor.y, 0, s_hidden_window, 0);
         }
+    } else if (msg == WM_DEVICE_CHANGED) {
+        s_tray_icon_data.hIcon = LoadIconA(
+            s_hinstance,
+            MAKEINTRESOURCEA((lp) ? (IDI_TRAYICON_ONLINE) : (IDI_TRAYICON_OFFLINE))
+        );
+        int tip_length = FormatTextA(
+            s_tray_icon_data.szTip, COUNTOF(s_tray_icon_data.szTip), "Tiny Tablet Driver"
+        );
+        if (lp) {
+            FormatTextA(
+                s_tray_icon_data.szTip + tip_length,
+                COUNTOF(s_tray_icon_data.szTip) - tip_length,
+                " (Active)"
+            );
+        }
+        ASSERT(Shell_NotifyIconA(NIM_MODIFY, &s_tray_icon_data));
     } else if (msg == WM_COMMAND) {
         switch (LOWORD(lp)) {
         case TRAY_MENU_EXIT_ITEM:
@@ -395,7 +405,8 @@ DWORD CALLBACK DeviceChangedCallback(
         return ERROR_SUCCESS;
     }
 
-    Println("Connected Wacom CTL-672 tablet.");
     SetEvent(ctx->device_connected_event);
+    PostMessageA(s_hidden_window, WM_DEVICE_CHANGED, 0, true);
+    Println("Connected Wacom CTL-672 tablet.");
     return ERROR_SUCCESS;
 }
