@@ -1,7 +1,10 @@
 # Files
+*.res
+*.exe
+*.obj
+*.ilk
 *.zip
 *.ignore
 
 # Folders
-out/
 *.ignore/

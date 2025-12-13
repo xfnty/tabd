@@ -1,40 +1,17 @@
-**Tiny Tablet Driver** – minimal user space driver for Wacom CTL-672 drawing tablet written in C99 
-using only Windows API. Based on [OpenTabletDriver][otd].
+**tabd** – minimal userspace driver for drawing tablets.
 
-Status:
-- find, open and read raw data from HID device with VID=1386 & PID=891 (aka CTL-672)
-- switch tablet from "generic mouse" mode into raw mode (but not restore it)
-- parse tablet report
-- send mouse inputs (position, LMB, RMB)
-- show tray icon with exit menu button
-- detect when tablet is connected/disconnected
-- sleep on all inputs (no active waiting)
-- indicate active/inactive states and have icons for them
-
-Build requirements:
-- [Visual Studio Build Tools][vstools] (MSVC, Windows SDK)
-- [64-Bit MSVC toolset][64tools] command prompt being active
-
-Build and run:
+Compiling using MSVC:
 ```bat
-project build run
+rc /nologo /i src /fo icon.res res\icon.rc
+cl /nologo src\tabd.c src\tablet.c src\util.c icon.res /link /subsystem:windows /entry:_start
 ```
 
-Package for distribution:
+Running:
 ```bat
-project dist
+start /b /wait tabd.exe
 ```
 
-Delete intermediate files:
+Clean:
 ```bat
-project clean
+del /q /s /f *.exe *.obj *.zip *.ilk *.res 1> nul
 ```
-
-Check dependencies:
-```bat
-dumpbin /imports out\TinyTabletDriver.exe
-```
-
-[otd]: https://github.com/OpenTabletDriver/OpenTabletDriver
-[vstools]: https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2026
-[64tools]: https://learn.microsoft.com/en-us/cpp/build/how-to-enable-a-64-bit-visual-cpp-toolset-on-the-command-line?view=msvc-170

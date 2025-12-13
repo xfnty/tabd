@@ -1,5 +1,8 @@
-#pragma once
+#ifndef _TABD_RESOURCES_H
+#define _TABD_RESOURCES_H
 
 #define IDI_APPICON          10001
 #define IDI_TRAYICON_OFFLINE 10002
 #define IDI_TRAYICON_ONLINE  10003
+
+#endif /* _TABD_RESOURCES_H */
