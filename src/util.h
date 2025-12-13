@@ -3,6 +3,12 @@
 
 /* misc */
 typedef unsigned short wchar_t;
+typedef struct {
+    float x, y;
+} Vec2;
+typedef struct {
+    float left, top, right, bottom;
+} Rect;
 
 #define _CHAR_LITERAL_TO_WCHAR_2(_x) L ## _x
 #define CHAR_LITERAL_TO_WCHAR(_x) _CHAR_LITERAL_TO_WCHAR_2(_x)
@@ -10,6 +16,7 @@ typedef unsigned short wchar_t;
 #define COUNTOF(_a) (sizeof(_a)/sizeof((_a)[0]))
 #define TRAP() __debugbreak()
 #define ASSERT(_e) do { if (!(_e)) TRAP(); } while(0)
+#define CONSTRAIN(_v, _min, _max) ((_v) < (_min) ? (_min) : ((_v) > (_max) ? (_max) : (_v)))
 
 
 /* stdlib */
@@ -26,6 +33,7 @@ typedef void *_locale_t;
 #define va_start(_list, _arg) ((void)__va_start(&(_list), (_arg)))
 #define va_end(_list) ((void)((_list) = (va_list)0))
 
+int __cdecl _dsign(double _X);
 void __cdecl __va_start(va_list* , ...);
 void *memset(void *dest, int c, size_t count);
 void *memcpy(void *dest, const void *src, size_t count);
@@ -208,6 +216,15 @@ typedef struct _HIDD_ATTRIBUTES {
 #define WAIT_ABANDONED_0                   0x00000080L
 #define QS_ALLINPUT                        0x047B
 #define ERROR_IO_PENDING                   997
+#define INPUT_MOUSE                        0
+#define INPUT_KEYBOARD                     1
+#define INPUT_HARDWARE                     2
+#define MOUSEEVENTF_MOVE                   0x0001
+#define MOUSEEVENTF_LEFTDOWN               0x0002
+#define MOUSEEVENTF_LEFTUP                 0x0004
+#define MOUSEEVENTF_RIGHTDOWN              0x0008
+#define MOUSEEVENTF_RIGHTUP                0x0010
+#define MOUSEEVENTF_ABSOLUTE               0x8000
 #define LOWORD(l)                          ((WORD)(((DWORD_PTR)(l)) & 0xffff))
 #define HIWORD(l)                          ((WORD)((((DWORD_PTR)(l)) >> 16) & 0xffff))
 #define MAKEINTRESOURCEW(i)                ((LPCWSTR)((ULONG_PTR)((WORD)(i))))

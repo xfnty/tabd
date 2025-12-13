@@ -4,7 +4,7 @@
 #include "util.h"
 
 typedef struct {
-    float x, y;
+    Vec2 point;
     DWORD flags;
 } TabletReport;
 

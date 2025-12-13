@@ -1,11 +1,13 @@
 #include "util.h"
+#include "preset.h"
 #include "tablet.h"
 #include "resources.h"
 
-#define TRAY_WNDCLASSNAME L"tabd"
-#define TRAY_WM_ICON_MESSAGE (WM_USER+1)
-#define TRAY_WM_SHOW_MENU (WM_USER+2)
-#define TRAY_MENU_EXIT_ITEM 1
+#define TRAY_WNDCLASSNAME       L"tabd"
+#define TRAY_WM_ICON_MESSAGE    (WM_USER+1)
+#define TRAY_WM_SHOW_MENU       (WM_USER+2)
+#define TRAY_WM_ACTIVATE_PRESET (WM_USER+3)
+#define TRAY_MENU_EXIT_ITEM     1
 #define TRAY_MENU_PRESET_ITEM_0 100
 
 static void InitThreadMessageQueue(void);
@@ -32,6 +34,8 @@ static DWORD CALLBACK DeviceChangedCallback(
     DWORD                 data_size
 );
 
+static void SynthesizeInput(const TabletReport *report);
+
 static DWORD s_main_thread_id;
 static HINSTANCE s_hinstance;
 static HANDLE s_hconsole;
@@ -47,6 +51,7 @@ static HCMNOTIFICATION s_device_notification;
 static HANDLE s_tablet_handle = INVALID_HANDLE_VALUE;
 static TabletInfo s_tablet_info;
 static BYTE s_tablet_packet[1024];
+static int s_tablet_preset_idx;
 
 void _start(void) {
     s_main_thread_id = GetCurrentThreadId();
@@ -111,11 +116,23 @@ void _start(void) {
                 continue;
             }
 
-            Log(L"Packet[%lu]", packet_size);
+            EnterCriticalSection(&s_tablet_lock);
+            TabletReport report = {0};
+            if (s_tablet_info.Parse(s_tablet_packet, packet_size, &report)) {
+                SynthesizeInput(&report);
+            }
+            LeaveCriticalSection(&s_tablet_lock);
         } else if (wait == WAIT_OBJECT_0 + 1) {
             MSG msg;
-            if (PeekMessageW(&msg, (HWND)-1, 0, 0, PM_REMOVE) && msg.message == WM_QUIT) {
-                break;
+            if (PeekMessageW(&msg, (HWND)-1, 0, 0, PM_REMOVE)) {
+                if (msg.message == WM_QUIT) {
+                    break;
+                } else if (msg.message == TRAY_WM_ACTIVATE_PRESET) {
+                    EnterCriticalSection(&s_tablet_lock);
+                    s_tablet_preset_idx = msg.lParam;
+                    LeaveCriticalSection(&s_tablet_lock);
+                    Log(L"Activated \"%ls\" preset", g_presets[msg.lParam].name);
+                }
             }
         } else if (wait - WAIT_ABANDONED_0 == 0) {
             Log(L"Wait abandoned");
@@ -161,21 +178,25 @@ DWORD WINAPI TrayThreadProc(HANDLE thread_ready) {
     LeaveCriticalSection(&s_tray_lock);
     ASSERT(Shell_NotifyIconW(NIM_ADD, &s_tray_icon_data));
 
+    HMENU presets = CreateMenu();
+    for (int i = 0; i < g_preset_count; i++) {
+        AppendMenuW(presets, MF_STRING, TRAY_MENU_PRESET_ITEM_0 + i, g_presets[i].name);
+    }
+    HMENU menu = CreatePopupMenu();
+    AppendMenuW(menu, MF_POPUP, (UINT_PTR)presets, L"Presets");
+    AppendMenuW(menu, MF_STRING, TRAY_MENU_EXIT_ITEM, L"Exit");
+
     SetEvent(thread_ready);
     thread_ready = 0;
 
     for (MSG msg; GetMessageW(&msg, 0, 0, 0) > 0; ) {
-        if (msg.message == TRAY_WM_SHOW_MENU) {
+        if (msg.hwnd) {
+            TranslateMessage(&msg);
+            DispatchMessageW(&msg);
+        } else if (msg.message == TRAY_WM_SHOW_MENU) {
             POINT cursor;
             GetCursorPos(&cursor);
             SetForegroundWindow(hwnd);
-
-            HMENU presets = CreateMenu();
-            AppendMenuW(presets, MF_STRING, TRAY_MENU_PRESET_ITEM_0 + 0, L"Osu");
-            AppendMenuW(presets, MF_STRING, TRAY_MENU_PRESET_ITEM_0 + 1, L"Drawing");
-            HMENU menu = CreatePopupMenu();
-            AppendMenuW(menu, MF_POPUP, (UINT_PTR)presets, L"Presets");
-            AppendMenuW(menu, MF_STRING, TRAY_MENU_EXIT_ITEM, L"Exit");
 
             int choice = TrackPopupMenuEx(
                 menu, TPM_RETURNCMD | TPM_NONOTIFY, cursor.x, cursor.y, hwnd, 0
@@ -183,18 +204,17 @@ DWORD WINAPI TrayThreadProc(HANDLE thread_ready) {
 
             if (choice == TRAY_MENU_EXIT_ITEM) {
                 PostThreadMessageW(s_main_thread_id, WM_QUIT, 0, 0);
+            } else if (choice >= TRAY_MENU_PRESET_ITEM_0) {
+                ASSERT(choice < TRAY_MENU_PRESET_ITEM_0 + g_preset_count);
+                PostThreadMessageW(
+                    s_main_thread_id, TRAY_WM_ACTIVATE_PRESET, 0, choice - TRAY_MENU_PRESET_ITEM_0
+                );
             }
-
-            DestroyMenu(menu);
-            DestroyMenu(presets);
-        }
-
-        if (msg.hwnd) {
-            TranslateMessage(&msg);
-            DispatchMessageW(&msg);
         }
     }
 
+    DestroyMenu(menu);
+    DestroyMenu(presets);
     Shell_NotifyIconW(NIM_DELETE, &s_tray_icon_data);
     DestroyWindow(hwnd);
     UnregisterClassW(TRAY_WNDCLASSNAME, s_hinstance);
@@ -275,6 +295,22 @@ DWORD CALLBACK DeviceChangedCallback(
     }
     LeaveCriticalSection(&s_tablet_lock);
     return ERROR_SUCCESS;
+}
+
+void SynthesizeInput(const TabletReport *report) {
+    EnterCriticalSection(&s_tablet_lock);
+    Vec2 point = MapTabletPointToScreen(&g_presets[s_tablet_preset_idx], report->point);
+    LeaveCriticalSection(&s_tablet_lock);
+
+    INPUT input = {
+        .type = INPUT_MOUSE,
+        .mi = (MOUSEINPUT){
+            .dx = point.x * 65535,
+            .dy = point.y * 65535,
+            .dwFlags = MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE,
+        },
+    };
+    SendInput(1, &input, sizeof(input));
 }
 
 void InitThreadMessageQueue(void) {

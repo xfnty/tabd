@@ -20,7 +20,7 @@ bool WacomCTL672PacketParser(BYTE *packet, DWORD size, TabletReport *report) {
     if (size != 10 || packet[0] != 0x02 || (packet[1] == 0x00 || packet[1] == 0x80))
         return false;
 
-    report->x = *(USHORT*)(packet + 2) / 21600.0f;
-    report->y = *(USHORT*)(packet + 4) / 13500.0f;
+    report->point.x = *(USHORT*)(packet + 2) / (float)0x5460;
+    report->point.y = *(USHORT*)(packet + 4) / (float)0x34BC;
     return true;
 }

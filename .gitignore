@@ -1,6 +1,8 @@
 # Files
 *.res
 *.exe
+*.pdb
+*.rdi
 *.obj
 *.ilk
 *.zip
