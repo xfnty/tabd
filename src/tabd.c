@@ -52,11 +52,11 @@ static HANDLE s_tablet_handle = INVALID_HANDLE_VALUE;
 static TabletInfo s_tablet_info;
 static BYTE s_tablet_packet[1024];
 static int s_tablet_preset_idx;
+static TabletReport s_tablet_previous_report;
 
 void _start(void) {
     s_main_thread_id = GetCurrentThreadId();
     s_hinstance = GetModuleHandleW(0);
-
     if (AttachConsole(ATTACH_PARENT_PROCESS)) {
         s_hconsole = GetStdHandle(STD_OUTPUT_HANDLE);
     }
@@ -135,7 +135,7 @@ void _start(void) {
                 }
             }
         } else if (wait - WAIT_ABANDONED_0 == 0) {
-            Log(L"Wait abandoned");
+            Log(L"Wait abandoned? (%d)", GetLastError());
             CleanUpTablet();
         } else {
             Log(L"MsgWaitForMultipleObjects() error %d", GetLastError());
@@ -209,6 +209,8 @@ DWORD WINAPI TrayThreadProc(HANDLE thread_ready) {
                 PostThreadMessageW(
                     s_main_thread_id, TRAY_WM_ACTIVATE_PRESET, 0, choice - TRAY_MENU_PRESET_ITEM_0
                 );
+            } else {
+                Log(L"TrackPopupMenuEx() returned %d (%d)", choice, GetLastError());
             }
         }
     }
@@ -279,6 +281,8 @@ void CleanUpTablet(void) {
     EnterCriticalSection(&s_tablet_lock);
     CloseHandle(s_tablet_handle);
     s_tablet_handle = INVALID_HANDLE_VALUE;
+    s_tablet_info = (TabletInfo){0};
+    s_tablet_previous_report = (TabletReport){0};
     LeaveCriticalSection(&s_tablet_lock);
 }
 
@@ -299,8 +303,11 @@ DWORD CALLBACK DeviceChangedCallback(
 
 void SynthesizeInput(const TabletReport *report) {
     EnterCriticalSection(&s_tablet_lock);
-    Vec2 point = MapTabletPointToScreen(&g_presets[s_tablet_preset_idx], report->point);
-    LeaveCriticalSection(&s_tablet_lock);
+    Vec2 point = MapTabletPointToScreen(
+        &g_presets[s_tablet_preset_idx],
+        &s_tablet_info,
+        report->point
+    );
 
     INPUT input = {
         .type = INPUT_MOUSE,
@@ -310,6 +317,21 @@ void SynthesizeInput(const TabletReport *report) {
             .dwFlags = MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE,
         },
     };
+
+    // FIXME
+    bool pointer_down = report->flags & TABLET_REPORT_POINTER_DOWN;
+    bool was_pointer_down = s_tablet_previous_report.flags & TABLET_REPORT_POINTER_DOWN;
+    if      (pointer_down && !was_pointer_down) input.mi.dwFlags |= MOUSEEVENTF_LEFTDOWN;
+    else if (!pointer_down && was_pointer_down) input.mi.dwFlags |= MOUSEEVENTF_LEFTUP;
+
+    bool b1_down = report->flags & TABLET_REPORT_BUTTON_DOWN(0);
+    bool was_b1_down = s_tablet_previous_report.flags & TABLET_REPORT_BUTTON_DOWN(0);
+    if      (b1_down && !was_b1_down) input.mi.dwFlags |= MOUSEEVENTF_RIGHTDOWN;
+    else if (!b1_down && was_b1_down) input.mi.dwFlags |= MOUSEEVENTF_RIGHTUP;
+
+    s_tablet_previous_report = *report;
+    LeaveCriticalSection(&s_tablet_lock);
+
     SendInput(1, &input, sizeof(input));
 }
 

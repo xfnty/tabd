@@ -3,6 +3,9 @@
 
 #include "util.h"
 
+#define TABLET_REPORT_POINTER_DOWN 0x01
+#define TABLET_REPORT_BUTTON_DOWN(_n) (1 << (_n) + 1)
+
 typedef struct {
     Vec2 point;
     DWORD flags;
@@ -11,7 +14,7 @@ typedef struct {
 typedef struct {
     const WCHAR *name;
     USHORT vid, pid;
-    float aspect_ratio;
+    Vec2 measurements;
     BYTE features[64];
     DWORD features_size;
     bool (*Parse)(BYTE *packet, DWORD size, TabletReport *report);

@@ -6,9 +6,6 @@ typedef unsigned short wchar_t;
 typedef struct {
     float x, y;
 } Vec2;
-typedef struct {
-    float left, top, right, bottom;
-} Rect;
 
 #define _CHAR_LITERAL_TO_WCHAR_2(_x) L ## _x
 #define CHAR_LITERAL_TO_WCHAR(_x) _CHAR_LITERAL_TO_WCHAR_2(_x)
@@ -33,7 +30,8 @@ typedef void *_locale_t;
 #define va_start(_list, _arg) ((void)__va_start(&(_list), (_arg)))
 #define va_end(_list) ((void)((_list) = (va_list)0))
 
-int __cdecl _dsign(double _X);
+double __cdecl sin(double _X);
+double __cdecl cos(double _X);
 void __cdecl __va_start(va_list* , ...);
 void *memset(void *dest, int c, size_t count);
 void *memcpy(void *dest, const void *src, size_t count);
@@ -225,6 +223,8 @@ typedef struct _HIDD_ATTRIBUTES {
 #define MOUSEEVENTF_RIGHTDOWN              0x0008
 #define MOUSEEVENTF_RIGHTUP                0x0010
 #define MOUSEEVENTF_ABSOLUTE               0x8000
+#define SM_CXSCREEN                        0
+#define SM_CYSCREEN                        1
 #define LOWORD(l)                          ((WORD)(((DWORD_PTR)(l)) & 0xffff))
 #define HIWORD(l)                          ((WORD)((((DWORD_PTR)(l)) >> 16) & 0xffff))
 #define MAKEINTRESOURCEW(i)                ((LPCWSTR)((ULONG_PTR)((WORD)(i))))
@@ -319,6 +319,7 @@ DWORD MsgWaitForMultipleObjects(
     DWORD         dwMilliseconds,
     DWORD         dwWakeMask
 );
+int GetSystemMetrics(int nIndex);
 BOOL PostThreadMessageW(DWORD idThread, UINT Msg, WPARAM wParam, LPARAM lParam);
 HICON WINAPI LoadIconW(HINSTANCE hInstance, LPCWSTR lpIconName);
 HMENU WINAPI CreateMenu(void);
