@@ -7,7 +7,7 @@
 Compile using MSVC with 64-bit prompt enabled (32-bit evironment is **not** supported):
 ```bat
 rc /nologo /i src /fo icon.res res\icon.rc
-cl /nologo src\tabd.c src\tablet.c src\util.c src\preset.c icon.res /link /subsystem:windows /entry:_start
+cl /nologo src\tabd.c icon.res /link /subsystem:windows /entry:_start
 ```
 
 Running in the terminal:
@@ -22,15 +22,7 @@ del /q /s /f *.exe *.obj *.zip *.ilk *.res *.pdb *.rdi 1> nul
 
 ### Configuring presets
 
-Preset settings are specified in [`src/preset.c`](src/preset.c#L3) file:
-```c
-const Preset g_presets[] = {
-    { L"Drawing", { {108, 67.5},    {216, 135},        0 } },
-    { L"Osu",     { {80.41049, 86}, {98, 55.098095}, -90 } },
-};
-```
-
-`Preset` type is defined in [`src/preset.h`](src/preset.h#L13):
+Preset settings are specified in [`preset.h`](src/preset.h) file:
 ```c
 typedef struct {
     Vec2 center;
@@ -42,6 +34,11 @@ typedef struct {
     PCWSTR name;
     ActiveArea area;
 } Preset;
+
+const Preset g_presets[] = {
+    { L"Drawing", { {108, 67.5},    {216, 135},        0 } },
+    { L"Osu",     { {80.41049, 86}, {98, 55.098095}, -90 } },
+};
 ```
 
 Currently, preset values can not be changed at runtime.
@@ -61,7 +58,7 @@ icon and selecting another preset under "Presets" submenu.
 
 tabd uses the same machinery as [HidSharpCore][hidsharp] – one of OpenTabletDriver's dependencies.
 
-To add support for new tablets see [`tablet.c`](src/tablet.c) and, if you want, OpenTabletDriver's
+To add support for new tablets see [`tablet.h`](src/tablet.h) and, if you want, OpenTabletDriver's
 [parsers][wacom-parser] and [configurations][ctl672.json] for tablets it supports.
 
 For now, only Wacom CTL-672 tablet is supported.

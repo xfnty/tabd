@@ -179,7 +179,7 @@ DWORD WINAPI TrayThreadProc(HANDLE thread_ready) {
     ASSERT(Shell_NotifyIconW(NIM_ADD, &s_tray_icon_data));
 
     HMENU presets = CreateMenu();
-    for (int i = 0; i < g_preset_count; i++) {
+    for (int i = 0; i < COUNTOF(g_presets); i++) {
         AppendMenuW(presets, MF_STRING, TRAY_MENU_PRESET_ITEM_0 + i, g_presets[i].name);
     }
     HMENU menu = CreatePopupMenu();
@@ -205,7 +205,7 @@ DWORD WINAPI TrayThreadProc(HANDLE thread_ready) {
             if (choice == TRAY_MENU_EXIT_ITEM) {
                 PostThreadMessageW(s_main_thread_id, WM_QUIT, 0, 0);
             } else if (choice >= TRAY_MENU_PRESET_ITEM_0) {
-                ASSERT(choice < TRAY_MENU_PRESET_ITEM_0 + g_preset_count);
+                ASSERT(choice < TRAY_MENU_PRESET_ITEM_0 + COUNTOF(g_presets));
                 PostThreadMessageW(
                     s_main_thread_id, TRAY_WM_ACTIVATE_PRESET, 0, choice - TRAY_MENU_PRESET_ITEM_0
                 );
