@@ -360,13 +360,18 @@ DWORD CALLBACK DeviceChangedCallback(
 
 void SynthesizeInput(const TabletReport *report) {
     EnterCriticalSection(&s_tablet_lock);
-    Vec2 point = MapTabletPointToScreen(
-        &g_presets[s_tablet_preset_idx],
-        &s_tablet_info,
-        report->point
-    );
 
-    // FIXME: all of this. its a костыль and should be refactored in the near future.
+    const Preset* preset = &g_presets[s_tablet_preset_idx];
+    Vec2 point = MapTabletPointToScreen(preset, &s_tablet_info, report->point);
+
+    // FIXME: all of this. its a костыль and should be refactored in the nearest future.
+
+    bool b1_down = report->flags & TABLET_REPORT_BUTTON_DOWN(0);
+    bool was_b1_down = s_tablet_previous_report.flags & TABLET_REPORT_BUTTON_DOWN(0);
+    bool b2_down = report->flags & TABLET_REPORT_BUTTON_DOWN(1);
+    bool was_b2_down = s_tablet_previous_report.flags & TABLET_REPORT_BUTTON_DOWN(1);
+    bool pointer_down = report->flags & TABLET_REPORT_POINTER_DOWN;
+    bool was_pointer_down = s_tablet_previous_report.flags & TABLET_REPORT_POINTER_DOWN;
 
     INPUT mouse = {
         .type = INPUT_MOUSE,
@@ -376,46 +381,39 @@ void SynthesizeInput(const TabletReport *report) {
             .dwFlags = MOUSEEVENTF_ABSOLUTE,
         },
     };
-    bool b1_down = report->flags & TABLET_REPORT_BUTTON_DOWN(0);
-    bool was_b1_down = s_tablet_previous_report.flags & TABLET_REPORT_BUTTON_DOWN(0);
+
+    POINT pixel_location = { point.x * s_screen_size.x, point.y * s_screen_size.y };
+    POINTER_TYPE_INFO pen = {
+        .type = PT_PEN,
+        .penInfo = {
+            .pointerInfo = {
+                .pointerType = PT_PEN,
+                .hwndTarget = s_ink_foreground_window,
+                .pointerFlags = POINTER_FLAG_INRANGE | (
+                    (pointer_down)
+                        ? (POINTER_FLAG_INCONTACT | POINTER_FLAG_DOWN)
+                        : (POINTER_FLAG_UP)
+                ),
+                .ptPixelLocation = pixel_location,
+                .ptPixelLocationRaw = pixel_location,
+            },
+            .penMask = PEN_MASK_PRESSURE,
+            .pressure = CLAMP(report->pressure * preset->pressure_sensitivity, 0, 1) * 1024,
+        }
+    };
+
+    if      (pointer_down && !was_pointer_down) mouse.mi.dwFlags |= MOUSEEVENTF_LEFTDOWN;
+    else if (!pointer_down && was_pointer_down) mouse.mi.dwFlags |= MOUSEEVENTF_LEFTUP;
+
+    mouse.mi.dwFlags |= MOUSEEVENTF_MOVE;
+
     if      (b1_down && !was_b1_down) mouse.mi.dwFlags |= MOUSEEVENTF_RIGHTDOWN;
     else if (!b1_down && was_b1_down) mouse.mi.dwFlags |= MOUSEEVENTF_RIGHTUP;
 
-    if (g_presets[s_tablet_preset_idx].mode == MODE_MOUSE) {
-        bool pointer_down = report->flags & TABLET_REPORT_POINTER_DOWN;
-        bool was_pointer_down = s_tablet_previous_report.flags & TABLET_REPORT_POINTER_DOWN;
-
-        if      (pointer_down && !was_pointer_down) mouse.mi.dwFlags |= MOUSEEVENTF_LEFTDOWN;
-        else if (!pointer_down && was_pointer_down) mouse.mi.dwFlags |= MOUSEEVENTF_LEFTUP;
-
-        mouse.mi.dwFlags |= MOUSEEVENTF_MOVE;
-
-        SendInput(1, &mouse, sizeof(mouse));
-    } else if (g_presets[s_tablet_preset_idx].mode == MODE_INK) {
-        POINT pixel_location = { point.x * s_screen_size.x, point.y * s_screen_size.y };
-        POINTER_TYPE_INFO pen = {
-            .type = PT_PEN,
-            .penInfo = {
-                .pointerInfo = {
-                    .pointerType = PT_PEN,
-                    .hwndTarget = s_ink_foreground_window,
-                    .pointerFlags = POINTER_FLAG_INRANGE | (
-                        (report->pressure)
-                            ? (POINTER_FLAG_INCONTACT | POINTER_FLAG_DOWN)
-                            : (POINTER_FLAG_UP)
-                    ),
-                    .ptPixelLocation = pixel_location,
-                    .ptPixelLocationRaw = pixel_location,
-                },
-                .penMask = PEN_MASK_PRESSURE,
-                .pressure = report->pressure * 1024,
-            }
-        };
+    if (preset->mode == MODE_INK || b2_down) {
         InjectSyntheticPointerInput(s_ink_device, &pen, 1);
-
-        if (b1_down != was_b1_down) {
-            SendInput(1, &mouse, sizeof(mouse));
-        }
+    } else {
+        SendInput(1, &mouse, sizeof(mouse));
     }
 
     s_tablet_previous_report = *report;

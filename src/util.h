@@ -13,7 +13,7 @@ typedef struct {
 #define COUNTOF(_a) (sizeof(_a)/sizeof((_a)[0]))
 #define TRAP() __debugbreak()
 #define ASSERT(_e) do { if (!(_e)) TRAP(); } while(0)
-#define CONSTRAIN(_v, _min, _max) ((_v) < (_min) ? (_min) : ((_v) > (_max) ? (_max) : (_v)))
+#define CLAMP(_v, _min, _max) ((_v) < (_min) ? (_min) : ((_v) > (_max) ? (_max) : (_v)))
 
 
 /* stdlib */

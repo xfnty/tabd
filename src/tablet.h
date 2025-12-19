@@ -45,10 +45,7 @@ bool WacomCTL672PacketParser(BYTE *packet, DWORD size, TabletReport *report) {
         .point.x  = *(USHORT*)(packet + 2) / (float)0x5460,
         .point.y  = *(USHORT*)(packet + 4) / (float)0x34BC,
         .pressure = *(USHORT*)(packet + 6) / 2047.0f,
-        .flags = 
-            (packet[1] & 0x01) ? (TABLET_REPORT_POINTER_DOWN) : (0) |
-            (packet[1] & 0x02) ? (TABLET_REPORT_BUTTON_DOWN(0)) : (0) |
-            (packet[1] & 0x04) ? (TABLET_REPORT_BUTTON_DOWN(1)) : (0),
+        .flags = packet[1] & 0x0F,
     };
 
     return true;
