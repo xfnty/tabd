@@ -1,12 +1,14 @@
 # Files
-*.res
+*.o
 *.exe
-*.pdb
-*.rdi
 *.obj
 *.ilk
+*.pdb
+*.rdi
+*.res
 *.zip
 *.ignore
 
 # Folders
+/out/
 *.ignore/
