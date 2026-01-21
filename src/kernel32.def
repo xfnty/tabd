@@ -1,0 +1,8 @@
+LIBRARY kernel32.dll
+
+EXPORTS
+GetLastError
+AttachConsole
+GetStdHandle
+WriteConsoleW
+ExitProcess
