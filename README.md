@@ -53,7 +53,7 @@ If you don't have compiler installed, use [build steps for TCC][tcc-steps].
 [email]: mailto:xfnty.x@gmail.com
 [support-issue]: https://github.com/xfnty/tabd/issues/new?template=tablet-support-request.md
 [tablets.c]: https://github.com/xfnty/tabd/blob/main/src/tablets.c
-[tcc-steps]: https://github.com/xfnty/tabd#compiling-using-tiny-c-compiler
+[tcc-steps]: https://github.com/xfnty/tabd?tab=readme-ov-file#compiling-using-tiny-c-compiler
 [vstools]: https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2026
 [vs64]: https://learn.microsoft.com/en-us/cpp/build/how-to-enable-a-64-bit-visual-cpp-toolset-on-the-command-line?view=msvc-170
 [tcc]: https://bellard.org/tcc/
