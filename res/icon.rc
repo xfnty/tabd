@@ -1,5 +1,0 @@
-#include "resources.h"
-
-IDI_APPICON ICON          "trayicon-offline.ico" // default/explorer icon
-IDI_TRAYICON_OFFLINE ICON "trayicon-offline.ico"
-IDI_TRAYICON_ONLINE ICON  "trayicon-online.ico"
