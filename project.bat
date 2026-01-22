@@ -61,7 +61,8 @@ for /r "%source_dir%" %%a in (*.def) do (
 set unity=!temp_dir_cc!msvc-unity
 set cflags=/std:c11 /Z7 /I "%source_dir%." "%unity%.c"
 set oflags=/Fo:"%unity%.obj" /Fe:"%exe%"
-set lflags=/link /LIBPATH:"!temp_dir_cc!" /debug /entry:_start /INCREMENTAL:NO /subsystem:windows
+set lflags=/link /LIBPATH:"!temp_dir_cc!" /debug /entry:_start /INCREMENTAL:NO /NODEFAULTLIB ^
+/subsystem:windows
 set compile_command=cl /nologo %cflags% !links! %oflags% %lflags%
 echo /* !compile_command! */> "%unity%.c"
 for /r "%source_dir%" %%a in (*.c) do echo #include "%%a">> "%unity%.c"
