@@ -59,7 +59,7 @@ for /r "%source_dir%" %%a in (*.def) do (
     )
 )
 set unity=!temp_dir_cc!msvc-unity
-set cflags=/std:c11 /Z7 /I "%source_dir%." "%unity%.c"
+set cflags=/std:c11 /GS- /Z7 /I "%source_dir%." "%unity%.c"
 set oflags=/Fo:"%unity%.obj" /Fe:"%exe%"
 set lflags=/link /LIBPATH:"!temp_dir_cc!" /debug /entry:_start /INCREMENTAL:NO /NODEFAULTLIB ^
 /subsystem:windows
