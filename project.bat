@@ -5,7 +5,7 @@ for /F "tokens=1,2 delims=#" %%a in ('"prompt #$H#$E# & echo on & for %%b in (1)
 set project_name=tabd
 set root_dir=%~dp0
 set output_dir=%~dp0out\
-set temp_dir=%root_dir%.ignore\
+set temp_dir=%TEMP%\%project_name%\
 set source_dir=%root_dir%src\
 set exe=%output_dir%%project_name%.exe
 
