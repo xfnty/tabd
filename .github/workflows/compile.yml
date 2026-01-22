@@ -7,12 +7,12 @@ on:
   workflow_dispatch: 
 
 jobs:
-  build:
+  msvc:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v4
     - uses: ilammy/msvc-dev-cmd@v1
       with:
         arch: amd64
-    - name: MSVC
+    - name: compile
       run: ./project build-msvc
