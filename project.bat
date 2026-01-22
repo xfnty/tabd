@@ -27,9 +27,9 @@ exit /b 0
 
 
 :PrintUsage
-echo Usage: project [clean] [build-msvc/build-tcc/build-gcc] [run]
+echo Usage: project [command...]
 echo.
-echo Commands:
+echo Available commands:
 echo   clean      Remove temporary files.
 echo   build-msvc Build using MSVC Compiler (https://visualstudio.microsoft.com/downloads).
 echo   build-tcc  Build using Tiny C Compiler (https://bellard.org/tcc).
