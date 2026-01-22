@@ -1,0 +1,14 @@
+name: Compile
+run-name: Compile
+
+on:
+  push:
+  workflow_dispatch: 
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: MSVC
+      run: ./project build-msvc
