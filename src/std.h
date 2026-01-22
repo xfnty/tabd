@@ -40,17 +40,19 @@
     #endif
 #endif
 
+typedef uint16_t WCHAR, *PWSTR;
+typedef const WCHAR *PCWSTR;
 typedef int32_t BOOL;
 typedef uint32_t DWORD, *LPDWORD;
 typedef int64_t LONG_PTR;
-typedef void *LPVOID, *HANDLE;
-typedef uint16_t *PCWSTR;
+typedef void VOID, *PVOID, *LPVOID, *HANDLE, *va_list;
 
 #define ATTACH_PARENT_PROCESS ((DWORD)-1)
 #define STD_OUTPUT_HANDLE     ((DWORD)-11)
 #define INVALID_HANDLE_VALUE  ((HANDLE)(LONG_PTR)-1)
 #define ERROR_ACCESS_DENIED   0x5
 
+/* kernel32.dll */
 DWORD GetLastError(void);
 BOOL WINAPI AttachConsole(DWORD dwProcessId);
 HANDLE WINAPI GetStdHandle(DWORD nStdHandle);
@@ -62,5 +64,9 @@ BOOL WINAPI WriteConsoleW(
     LPVOID  reserved
 );
 int ExitProcess(int code);
+
+/* shlwapi.dll */
+int wnsprintfW(PWSTR buffer, int maxsize, PCWSTR format, ...); /* NOTE: doesn't support %f or %p */
+int wvnsprintfW(PWSTR buffer, int maxsize, PCWSTR format, va_list args);
 
 #endif

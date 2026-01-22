@@ -1,9 +1,11 @@
 #include "std.h"
 
 void _start() {
+    int n;
     BOOL ok;
     DWORD err;
     HANDLE stdout;
+    WCHAR buffer[1024];
 
     ok = AttachConsole(ATTACH_PARENT_PROCESS);
     err = GetLastError();
@@ -16,7 +18,12 @@ void _start() {
         ExitProcess(2);
     }
 
-    if (!WriteConsoleW(stdout, L"Hello, World!\n", 14, 0, 0)) {
+    n = wnsprintfW(buffer, sizeof(buffer)-1, L"str=%ls int=%d\n", L"string", 123);
+    if (n < 0) {
+        ExitProcess(n);
+    }
+
+    if (!WriteConsoleW(stdout, buffer, n, 0, 0)) {
         ExitProcess(3);
     }
 
