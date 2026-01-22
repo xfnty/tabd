@@ -3,6 +3,7 @@ run-name: Compile
 
 on:
   push:
+    paths: ['project.bat', 'src/**']
   workflow_dispatch: 
 
 jobs:
