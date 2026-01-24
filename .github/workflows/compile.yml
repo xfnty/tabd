@@ -30,3 +30,19 @@ jobs:
     - name: Compile
       shell: cmd
       run: project.bat build-tcc
+  gcc:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install w64devkit
+      shell: powershell
+      run: |
+        New-Item -Path w64dk -ItemType Directory
+        Invoke-WebRequest `
+        -Uri https://github.com/skeeto/w64devkit/releases/download/v2.5.0/w64devkit-x64-2.5.0.7z.exe `
+        -OutFile w64dk.exe
+        ./w64dk.exe -ow64dk -y
+        echo "w64dk\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
+    - name: Compile
+      shell: cmd
+      run: project.bat build-gcc
