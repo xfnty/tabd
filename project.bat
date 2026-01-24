@@ -50,7 +50,13 @@ mkdir %output_dir% !temp_dir_cc! 2> nul
 set links=
 for /r "%source_dir%" %%a in (*.def) do (
     set links=%%~na.lib !links!
-    if not exist "!temp_dir_cc!%%~na.lib" (
+    set should_generate=0
+    if not exist "!temp_dir_cc!%%~na.lib" set should_generate=1
+    if "!should_generate!"=="0" (
+        xcopy /D /L /Y "%%a" "!temp_dir_cc!%%~na.lib" | FINDSTR /E /C:".def" >nul
+        if !errorlevel! equ 0 set should_generate=1
+    )
+    if "!should_generate!"=="1" (
         echo %%~na.lib
         lib /nologo /wx /def:"%%a" /out:"!temp_dir_cc!%%~na.lib" /machine:x64 > "!temp_dir_cc!%%~na.txt" || (
             type "!temp_dir_cc!%%~na.txt"
@@ -89,9 +95,19 @@ mkdir %output_dir% !temp_dir_cc! 2> nul
 set links=
 for /r "%source_dir%" %%a in (*.def) do (
     set links="!temp_dir_cc!%%~na.a" !links!
-    if not exist "!temp_dir_cc!%%~na.a" (
+    set should_generate=0
+    if not exist "!temp_dir_cc!%%~na.lib" set should_generate=1
+    if "!should_generate!"=="0" (
+        xcopy /D /L /Y "%%a" "!temp_dir_cc!%%~na.lib" | FINDSTR /E /C:".def" >nul
+        if !errorlevel! equ 0 set should_generate=1
+    )
+    if "!should_generate!"=="1" (
         echo %%~na.a
         dlltool -d "%%a" -l "!temp_dir_cc!%%~na.a" > "!temp_dir_cc!%%~na.txt" || exit /b 1
+        lib /nologo /wx /def:"%%a" /out:"!temp_dir_cc!%%~na.lib" /machine:x64 > "!temp_dir_cc!%%~na.txt" || (
+            type "!temp_dir_cc!%%~na.txt"
+            exit /b 1
+        )
     )
 )
 set unity=!temp_dir_cc!gcc-unity
