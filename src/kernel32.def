@@ -6,3 +6,7 @@ AttachConsole
 GetStdHandle
 WriteConsoleW
 ExitProcess
+InitializeCriticalSection
+DeleteCriticalSection
+EnterCriticalSection
+LeaveCriticalSection
