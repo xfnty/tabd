@@ -24,6 +24,8 @@ void Log(const WCHAR *format, ...) {
     WCHAR b[LOG_MESSAGE_BUFFER_SIZE];
 
     va_start(args, format);
-    n = wvnsprintfW(b, sizeof(b)-1, format, args);
+    n = wnsprintfW(b, sizeof(b) - 2, L"%04X ", GetCurrentThreadId());
+    n += wvnsprintfW(b + n, sizeof(b) - n - 2, format, args);
+    b[n++] = L'\n';
     WriteConsoleW(s_Log.stdout, b, n, 0, 0);
 }

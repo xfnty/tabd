@@ -115,6 +115,7 @@ void InitializeCriticalSection(LPCRITICAL_SECTION lpCriticalSection);
 void EnterCriticalSection(LPCRITICAL_SECTION lpCriticalSection);
 void LeaveCriticalSection(LPCRITICAL_SECTION lpCriticalSection);
 void DeleteCriticalSection(LPCRITICAL_SECTION lpCriticalSection);
+DWORD GetCurrentThreadId();
 
 /* shlwapi.dll */
 int wnsprintfW(PWSTR buffer, int maxsize, PCWSTR format, ...); /* NOTE: doesn't support %f or %p */

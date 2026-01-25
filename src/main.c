@@ -7,6 +7,7 @@ void _start() {
     }
 
     Log(L"1%ls%d", L"23", 456);
+    Log(L"Hello, %ls!", L"World");
 
     ExitProcess(0);
 }

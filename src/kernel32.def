@@ -10,3 +10,4 @@ InitializeCriticalSection
 DeleteCriticalSection
 EnterCriticalSection
 LeaveCriticalSection
+GetCurrentThreadId
