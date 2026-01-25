@@ -11,3 +11,7 @@ DeleteCriticalSection
 EnterCriticalSection
 LeaveCriticalSection
 GetCurrentThreadId
+CreateEventW
+WaitForSingleObject
+CreateThread
+SetEvent

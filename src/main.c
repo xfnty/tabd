@@ -1,13 +1,12 @@
 #include "std.h"
 #include "log.h"
+#include "tray.h"
 
 void _start() {
-    if (!Log_Init()) {
-        ExitProcess(1);
-    }
+    Log_Init();
+    Tray_Init();
+    Log(L"Startup finished");
 
-    Log(L"1%ls%d", L"23", 456);
-    Log(L"Hello, %ls!", L"World");
-
+    Tray_Cleanup();
     ExitProcess(0);
 }

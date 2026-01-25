@@ -3,7 +3,7 @@
 
 #include "std.h"
 
-bool Log_Init();
-void Log(const WCHAR *format, ...);
+void Log_Init();
+void Log(LPCWSTR format, ...);
 
 #endif

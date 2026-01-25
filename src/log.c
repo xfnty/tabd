@@ -6,19 +6,12 @@ static struct {
     HANDLE stdout;
 } s_Log;
 
-bool Log_Init() {
-    BOOL ok;
-
-    ok = AttachConsole(ATTACH_PARENT_PROCESS);
-    if (!ok && GetLastError() != ERROR_ACCESS_DENIED) {
-        return false;
-    }
-
+void Log_Init() {
+    AttachConsole(ATTACH_PARENT_PROCESS);
     s_Log.stdout = GetStdHandle(STD_OUTPUT_HANDLE);
-    return true;
 }
 
-void Log(const WCHAR *format, ...) {
+void Log(LPCWSTR format, ...) {
     va_list args;
     int n;
     WCHAR b[LOG_MESSAGE_BUFFER_SIZE];
