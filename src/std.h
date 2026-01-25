@@ -53,13 +53,13 @@ typedef uint8_t bool;
 
 /* WinAPI types */
 typedef uint8_t UCHAR;
-typedef uint16_t WCHAR, *PWSTR, WORD, USHORT;
+typedef uint16_t WCHAR, *PWSTR, WORD, USHORT, ATOM;
 typedef const WCHAR *PCWSTR, *LPCWSTR;
 typedef int32_t BOOL, LONG;
 typedef uint32_t DWORD, *LPDWORD, UINT, ULONG;
-typedef int64_t LONG_PTR, LPARAM;
+typedef int64_t LONG_PTR, LPARAM, LRESULT;
 typedef uint64_t ULONG_PTR, SIZE_T, WPARAM;
-typedef void *PVOID, *LPVOID, *HANDLE, *HWND, *HICON;
+typedef void *PVOID, *LPVOID, *HANDLE, *HWND, *HICON, *HINSTANCE, *HCURSOR, *HBRUSH, *HMODULE, *HMENU;
 
 typedef struct _LIST_ENTRY _LIST_ENTRY;
 
@@ -148,6 +148,23 @@ typedef struct tagMSG {
   DWORD  lPrivate;
 } MSG, *PMSG, *NPMSG, *LPMSG;
 
+typedef LRESULT (WINAPI* WNDPROC)(HWND, UINT, WPARAM, LPARAM);
+
+typedef struct tagWNDCLASSEXW {
+    UINT        cbSize;
+    UINT        style;
+    WNDPROC     lpfnWndProc;
+    int         cbClsExtra;
+    int         cbWndExtra;
+    HINSTANCE   hInstance;
+    HICON       hIcon;
+    HCURSOR     hCursor;
+    HBRUSH      hbrBackground;
+    LPCWSTR     lpszMenuName;
+    LPCWSTR     lpszClassName;
+    HICON       hIconSm;
+} WNDCLASSEXW, *PWNDCLASSEXW, *NPWNDCLASSEXW, *LPWNDCLASSEXW;
+
 #define ATTACH_PARENT_PROCESS ((DWORD)-1)
 #define STD_OUTPUT_HANDLE     ((DWORD)-11)
 #define INVALID_HANDLE_VALUE  ((HANDLE)(LONG_PTR)-1)
@@ -186,6 +203,7 @@ HANDLE CreateThread(
 HANDLE CreateEventW(PVOID lpEventAttributes, BOOL bManualReset, BOOL bInitialState, LPCWSTR lpName);
 BOOL SetEvent(HANDLE hEvent);
 DWORD WaitForSingleObject(HANDLE hHandle, DWORD dwMilliseconds);
+HMODULE WINAPI GetModuleHandleW(LPCWSTR lpModuleName);
 
 /* shlwapi.dll */
 int wnsprintfW(PWSTR buffer, int maxsize, PCWSTR format, ...); /* doesn't support %f or %p */
@@ -195,5 +213,25 @@ int wvnsprintfW(PWSTR buffer, int maxsize, PCWSTR format, va_list args);
 BOOL PeekMessageW(LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin, UINT wMsgFilterMax, UINT wRemoveMsg);
 BOOL GetMessageW(LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin, UINT wMsgFilterMax);
 BOOL PostThreadMessageW(DWORD idThread, UINT Msg, WPARAM wParam, LPARAM lParam);
+ATOM WINAPI RegisterClassExW(const WNDCLASSEXW *cls);
+BOOL WINAPI UnregisterClassW(LPCWSTR lpClassName, HINSTANCE hInstance);
+HWND WINAPI CreateWindowExW(
+    DWORD dwExStyle,
+    LPCWSTR lpClassName,
+    LPCWSTR lpWindowName,
+    DWORD dwStyle,
+    int X,
+    int Y,
+    int nWidth,
+    int nHeight,
+    HWND hWndParent,
+    HMENU hMenu,
+    HINSTANCE hInstance,
+    LPVOID lpParam
+);
+BOOL WINAPI DestroyWindow(HWND hWnd);
+LRESULT WINAPI DefWindowProcW(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
+BOOL WINAPI TranslateMessage(const MSG *lpMsg);
+LRESULT WINAPI DispatchMessageW(const MSG *lpMsg);
 
 #endif

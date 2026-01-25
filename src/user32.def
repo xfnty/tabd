@@ -4,3 +4,10 @@ EXPORTS
 PeekMessageW
 GetMessageW
 PostThreadMessageW
+RegisterClassExW
+UnregisterClassW
+CreateWindowExW
+DestroyWindow
+DefWindowProcW
+TranslateMessage
+DispatchMessageW

@@ -30,6 +30,9 @@ If you want to do it yourself, see [tablets.c][tablets.c] file.
 
 If you don't have compiler installed, use [build steps for TCC][tcc-steps].
 
+To test the build with all compilers, run `project build-msvc run build-gcc run build-tcc run`.
+Run `project` to get more info.
+
 ### Compiling using MSVC
 
 1. Download [Build Tools for Visual Studio][vstools].
