@@ -116,7 +116,7 @@ typedef struct _NOTIFYICONDATAW {
     union {
         UINT uTimeout;
         UINT uVersion;
-    };
+    } _U;
     WCHAR szInfoTitle[64];
     DWORD dwInfoFlags;
     GUID guidItem;

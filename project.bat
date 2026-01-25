@@ -65,7 +65,10 @@ for /r "%source_dir%" %%a in (*.def) do (
     )
 )
 set unity=!temp_dir_cc!msvc-unity
-set cflags=/std:c11 /GS- /Z7 /I "%source_dir%." "%unity%.c"
+:: 4820 - padding bytes in struct
+:: 4255 - no 'void' in empty arg lists
+:: 5250 - '__va_start' intrinsic not declared
+set cflags=/std:c11 /GS- /Z7 /Wall /wd4820 /wd4255 /wd5250 /I "%source_dir%." "%unity%.c"
 set oflags=/Fo:"%unity%.obj" /Fe:"%exe%"
 set lflags=/link /LIBPATH:"!temp_dir_cc!" /debug /entry:_start /INCREMENTAL:NO /NODEFAULTLIB ^
 /subsystem:windows
@@ -82,7 +85,8 @@ mkdir %output_dir% !temp_dir_cc! 2> nul
 set links=
 for /r "%source_dir%" %%a in (*.def) do set links=-l%%~na !links!
 set unity=!temp_dir_cc!tcc-unity
-set compile_command=tcc -nostdlib -nostdinc -L"%source_dir%." -I"%source_dir%." -o "%exe%" "%unity%.c" !links!
+set compile_command=tcc -nostdlib -nostdinc -Wall -Wunsupported -Wwrite-strings -Wl,-subsystem=windows ^
+-L"%source_dir%." -I"%source_dir%." -o "%exe%" "%unity%.c" !links!
 echo /* %compile_command% */> "%unity%.c"
 for /r "%source_dir%" %%a in (*.c) do echo #include "%%a">> "%unity%.c"
 echo tcc-unity.c && %compile_command% || exit /b 1
@@ -111,8 +115,8 @@ for /r "%source_dir%" %%a in (*.def) do (
     )
 )
 set unity=!temp_dir_cc!gcc-unity
-set compile_command=gcc -nostdlib -nostdinc -std=c90 -pedantic-errors -Wl,-e,_start -L"!temp_dir_cc!." ^
--I"%source_dir%." -o "%exe%" "%unity%.c" !links!
+set compile_command=gcc -nostdlib -nostdinc -std=c90 -Wall -Wextra -pedantic -pedantic-errors -Wl,-e,_start ^
+-L"!temp_dir_cc!." -I"%source_dir%." -o "%exe%" "%unity%.c" !links!
 echo /* %compile_command% */> "%unity%.c"
 for /r "%source_dir%" %%a in (*.c) do echo #include "%%a">> "%unity%.c"
 echo gcc-unity.c && %compile_command% || exit /b 1
