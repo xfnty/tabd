@@ -21,6 +21,9 @@ for %%a in (%*) do (
         call :BuildGCC || exit /b 1
     ) else if "%%a"=="run" (
         call :Run || exit /b 1
+    ) else (
+        echo Unknown command !esc![1;91m%%a!esc![0m
+        exit /b 1
     )
 )
 exit /b 0
@@ -45,6 +48,7 @@ rmdir /q /s %output_dir% %temp_dir% 2> nul
 exit /b 0
 
 :BuildMSVC
+echo !esc![1;90mCompiling using !esc![1;34mMSVC!esc![0m
 set temp_dir_cc=%temp_dir%msvc\
 mkdir %output_dir% !temp_dir_cc! 2> nul
 set links=
@@ -80,6 +84,7 @@ exit /b 0
 
 
 :BuildTCC
+echo !esc![1;90mCompiling using !esc![1;34mTCC!esc![0m
 set temp_dir_cc=%temp_dir%tcc\
 mkdir %output_dir% !temp_dir_cc! 2> nul
 set links=
@@ -94,6 +99,7 @@ exit /b 0
 
 
 :BuildGCC
+echo !esc![1;90mCompiling using !esc![1;34mGCC!esc![0m
 set temp_dir_cc=%temp_dir%gcc\
 mkdir %output_dir% !temp_dir_cc! 2> nul
 set links=
@@ -124,9 +130,9 @@ exit /b 0
 
 
 :Run
+echo !esc![1;90mRunning !esc![1;34m%project_name%.exe!esc![0m
 start "" /d "%output_dir%." /b /wait "%exe%"
 if !errorlevel! neq 0 (
-    echo Exited with code !esc![1;91m!errorlevel!!esc![0m
-    exit /b 1
+    echo !esc![1;90mExited with code !esc![1;31m!errorlevel!!esc![0m
 )
 exit /b 0
