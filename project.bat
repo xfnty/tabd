@@ -77,12 +77,8 @@ mkdir %output_dir% !temp_dir_cc! 2> nul
 set links=
 for /r "%source_dir%" %%a in (*.def) do (
     set links="!temp_dir_cc!%%~na.a" !links!
-    call :Generate "%%a" "!temp_dir_cc!%%~na.lib" && (
+    call :Generate "%%a" "!temp_dir_cc!%%~na.a" && (
         dlltool -d "%%a" -l "!temp_dir_cc!%%~na.a" > "!temp_dir_cc!%%~na.txt" || exit /b 1
-        lib /nologo /wx /def:"%%a" /out:"!temp_dir_cc!%%~na.lib" /machine:x64 > "!temp_dir_cc!%%~na.txt" || (
-            type "!temp_dir_cc!%%~na.txt"
-            exit /b 1
-        )
     )
 )
 call :Generate "%root_dir%res\icon.rc" "!temp_dir_cc!icon.o" && (
