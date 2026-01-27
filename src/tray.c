@@ -1,15 +1,16 @@
 #include "tray.h"
 
 #include "log.h"
+#include "wms.h"
 #include "res.h"
+#include "preset.h"
 
-#define TRAY_PRESET_NAME_LENGTH 63
-#define TRAY_MAX_PRESET_COUNT 64
+#define TRAY_MAX_PRESET_COUNT   64
 #define TRAY_WNDCLASSNAME       L"tabd/tray_window"
 #define WM_TRAY_WM              (WM_USER+1)
 #define WM_TRAY_MENU            (WM_USER+2)
 #define TRAY_MENU_PRESET_ITEM_0 100
-#define TRAY_MENU_EXIT_ITEM 1
+#define TRAY_MENU_EXIT_ITEM     1
 
 static struct {
     HANDLE thread;
@@ -20,7 +21,7 @@ static struct {
     NOTIFYICONDATAW icon;
 
     CRITICAL_SECTION cs;
-    WCHAR preset_names[TRAY_PRESET_NAME_LENGTH + 1][TRAY_MAX_PRESET_COUNT];
+    WCHAR preset_names[PRESET_NAME_LENGTH][TRAY_MAX_PRESET_COUNT];
     int preset_ids[TRAY_MAX_PRESET_COUNT];
     int active_preset_id;
     int preset_id_counter;
@@ -48,7 +49,7 @@ int Tray_AddPreset(LPCWSTR name) {
     int i, l, id = TRAY_ERROR_TOO_MANY_PRESETS;
 
     l = lstrlenW(name);
-    if (l > TRAY_PRESET_NAME_LENGTH) {
+    if (l > PRESET_NAME_LENGTH - 1) {
         return TRAY_ERROR_NAME_TOO_LONG;
     }
 
@@ -162,6 +163,7 @@ DWORD WINAPI TrayThreadProc(HANDLE thread_ready_event) {
             if (!has_presets) {
                 AppendMenuW(s_Tray.menu, MF_STRING | MF_GRAYED | MF_DISABLED, 0, L"No presets");
             }
+            AppendMenuW(s_Tray.menu, MF_SEPARATOR, 0, 0);
             AppendMenuW(s_Tray.menu, MF_STRING, TRAY_MENU_EXIT_ITEM, L"Exit");
 
             GetCursorPos(&cursor);
@@ -187,8 +189,6 @@ DWORD WINAPI TrayThreadProc(HANDLE thread_ready_event) {
     LeaveCriticalSection(&s_Tray.cs);
 
     DeleteCriticalSection(&s_Tray.cs);
-
-    Log(L"Tray thread stopped");
     return 0;
 }
 

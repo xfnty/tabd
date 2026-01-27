@@ -15,6 +15,9 @@
     #define WINAPI __attribute__((stdcall))
 #endif
 
+/* util */
+#define COUNTOF(_a) (sizeof(_a)/sizeof((_a)[0]))
+
 /* stdlib types */
 #if defined(_MSC_VER)
     typedef __int8  int8_t;
@@ -50,14 +53,22 @@
 typedef uint8_t bool;
 #define true 1
 #define false 0
+typedef uint64_t size_t;
 
 #define ASSERT(_expr) do { if (!(_expr)) Trap(); } while(0)
 
+double atof(const char *s);
+int strcmp(const char *s1, const char *s2);
+void *memcpy(void *dest, const void *src, size_t n);
+
 /* WinAPI types */
+#define MAX_PATH 260
+
 typedef uint8_t UCHAR;
 typedef uint16_t WCHAR, *PWSTR, *LPWSTR, WORD, USHORT, ATOM;
+typedef const char *PCSTR, *LPCSTR;
 typedef const WCHAR *PCWSTR, *LPCWSTR;
-typedef int32_t BOOL, LONG;
+typedef int32_t BOOL, LONG, HRESULT;
 typedef uint32_t DWORD, *LPDWORD, UINT, ULONG;
 typedef int64_t LONG_PTR, LPARAM, LRESULT;
 typedef uint64_t ULONG_PTR, UINT_PTR, DWORD_PTR, SIZE_T, WPARAM;
@@ -167,6 +178,40 @@ typedef struct tagWNDCLASSEXW {
     HICON       hIconSm;
 } WNDCLASSEXW, *PWNDCLASSEXW, *NPWNDCLASSEXW, *LPWNDCLASSEXW;
 
+typedef struct _FILETIME {
+  DWORD dwLowDateTime;
+  DWORD dwHighDateTime;
+} FILETIME, *PFILETIME, *LPFILETIME;
+
+typedef struct _WIN32_FIND_DATAW {
+  DWORD    dwFileAttributes;
+  FILETIME ftCreationTime;
+  FILETIME ftLastAccessTime;
+  FILETIME ftLastWriteTime;
+  DWORD    nFileSizeHigh;
+  DWORD    nFileSizeLow;
+  DWORD    dwReserved0;
+  DWORD    dwReserved1;
+  WCHAR    cFileName[MAX_PATH];
+  WCHAR    cAlternateFileName[14];
+  DWORD    _obsolete1;
+  DWORD    _obsolete2;
+  WORD     _obsolete3;
+} WIN32_FIND_DATAW, *PWIN32_FIND_DATAW, *LPWIN32_FIND_DATAW;
+
+typedef struct _OVERLAPPED {
+  ULONG_PTR Internal;
+  ULONG_PTR InternalHigh;
+  union {
+    struct {
+      DWORD Offset;
+      DWORD OffsetHigh;
+    } DUMMYSTRUCTNAME;
+    PVOID Pointer;
+  } DUMMYUNIONNAME;
+  HANDLE    hEvent;
+} OVERLAPPED, *LPOVERLAPPED;
+
 #define ATTACH_PARENT_PROCESS ((DWORD)-1)
 #define STD_OUTPUT_HANDLE     ((DWORD)-11)
 #define INVALID_HANDLE_VALUE  ((HANDLE)(LONG_PTR)-1)
@@ -192,6 +237,13 @@ typedef struct tagWNDCLASSEXW {
 #define MF_CHECKED            0x00000008L
 #define MF_SEPARATOR          0x00000800L
 #define MF_POPUP              0x00000010L
+#define GENERIC_READ          0x80000000L
+#define GENERIC_WRITE         0x40000000L
+#define FILE_SHARE_READ       0x00000001
+#define FILE_SHARE_WRITE      0x00000002
+#define OPEN_EXISTING         3
+#define FILE_ATTRIBUTE_NORMAL 0x80
+#define CP_UTF8               65001
 #define MAKEINTRESOURCEW(_i)   ((LPCWSTR)((ULONG_PTR)((WORD)(_i))))
 #define LOWORD(l)              ((WORD)(((DWORD_PTR)(l)) & 0xffff))
 #define HIWORD(l)              ((WORD)((((DWORD_PTR)(l)) >> 16) & 0xffff))
@@ -225,8 +277,25 @@ HANDLE CreateEventW(PVOID lpEventAttributes, BOOL bManualReset, BOOL bInitialSta
 BOOL SetEvent(HANDLE hEvent);
 DWORD WaitForSingleObject(HANDLE hHandle, DWORD dwMilliseconds);
 HMODULE WINAPI GetModuleHandleW(LPCWSTR lpModuleName);
+int lstrlenA(PCSTR lpString);
 int lstrlenW(LPCWSTR lpString);
 LPWSTR lstrcpynW(LPWSTR dest, LPCWSTR src, int n);
+HANDLE FindFirstFileW(LPCWSTR lpFileName, LPWIN32_FIND_DATAW lpFindFileData);
+BOOL FindNextFileW(HANDLE hFindFile, LPWIN32_FIND_DATAW lpFindFileData);
+HANDLE CreateFileW(
+    LPCWSTR               lpFileName,
+    DWORD                 dwDesiredAccess,
+    DWORD                 dwShareMode,
+    LPSECURITY_ATTRIBUTES lpSecurityAttributes,
+    DWORD                 dwCreationDisposition,
+    DWORD                 dwFlagsAndAttributes,
+    HANDLE                hTemplateFile
+);
+BOOL ReadFile(HANDLE file, LPVOID buf, DWORD size, LPDWORD read, LPOVERLAPPED ol);
+BOOL CloseHandle(HANDLE hObject);
+int MultiByteToWideChar(UINT cp, DWORD dwFlags, LPCSTR mbs, int mbslen, LPWSTR ws, int wslen);
+void RtlCopyMemory(void *Destination, const void *Source, SIZE_T Length);
+void RtlZeroMemory(void* Destination, size_t Length);
 
 /* shlwapi.dll */
 int wnsprintfW(PWSTR buffer, int maxsize, PCWSTR format, ...); /* doesn't support %f or %p */
@@ -267,5 +336,8 @@ BOOL AppendMenuW(HMENU hMenu, UINT uFlags, UINT_PTR uIDNewItem, LPCWSTR lpNewIte
 BOOL TrackPopupMenuEx(HMENU hMenu, UINT uFlags, int x, int y, HWND hwnd, PVOID lptpm);
 BOOL GetCursorPos(LPPOINT lpPoint);
 BOOL SetForegroundWindow(HWND hWnd);
+
+/* kernelbase.dll */
+HRESULT PathCchCombine(PWSTR pszPathOut, size_t cchPathOut, PCWSTR pszPathIn, PCWSTR pszMore);
 
 #endif

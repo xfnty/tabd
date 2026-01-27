@@ -3,9 +3,6 @@
 
 #include "std.h"
 
-#define WM_TRAY_EXIT   (WM_USER+1)
-#define WM_TRAY_PRESET (WM_USER+2) /* lParam: preset id */
-
 #define TRAY_ERROR_NAME_TOO_LONG    -1
 #define TRAY_ERROR_TOO_MANY_PRESETS -2
 

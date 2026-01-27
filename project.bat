@@ -62,7 +62,7 @@ call :Generate "%root_dir%res\icon.rc" "!temp_dir_cc!icon.res" && (
     rc /nologo /i "%source_dir%." /fo "!temp_dir_cc!icon.res" "%root_dir%res\icon.rc" || exit /b 1
 )
 set unity=!temp_dir_cc!unity
-set cmd=cl /nologo /std:c11 /GS- /Z7 /Wall /wd4820 /wd4255 /wd5250 /wd5045 ^
+set cmd=cl /nologo /options:strict /std:c11 /GS- /Gs1048576 /Z7 /Wall /wd4820 /wd4255 /wd5250 /wd5045 ^
 /I "%source_dir%." "%unity%.c" "!temp_dir_cc!icon.res" !links! /Fo:"%unity%.obj" /Fe:"%exe%" ^
 /link /LIBPATH:"!temp_dir_cc!." /debug /entry:_start /INCREMENTAL:NO /NODEFAULTLIB /subsystem:windows
 call :GenerateUnity "%unity%.c" "!cmd!"
@@ -85,7 +85,8 @@ call :Generate "%root_dir%res\icon.rc" "!temp_dir_cc!icon.o" && (
     windres -I"%source_dir%." "%root_dir%res\icon.rc" -o "!temp_dir_cc!icon.o"
 )
 set unity=!temp_dir_cc!unity
-set cc=gcc -nostdlib -nostdinc -std=c90 -Wall -Wextra -pedantic -pedantic-errors -Wl,-e,_start ^
+set cc=gcc -nostdlib -nostdinc -std=c90 -fno-stack-protector -fno-stack-check -mno-stack-arg-probe ^
+-Wall -Wextra -pedantic -pedantic-errors -Wl,-e,_start ^
 -L"!temp_dir_cc!." -I"%source_dir%." -o "%exe%" "%unity%.c" "!temp_dir_cc!icon.o" !links!
 call :GenerateUnity "%unity%.c" "%cc%"
 echo unity.c && %cc% || exit /b 1

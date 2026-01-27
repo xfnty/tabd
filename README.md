@@ -1,21 +1,21 @@
 **tabd** is a replacement for [OpenTabletDriver][otd] I made for fun. It uses the same Windows APIs OTD does
 but doesn't take half a minute to start and won't open command prompt when added to autostart.
 
-tabd uses presets for configuration stored in a simple text files under `presets` folder which is in the same directory as
-`tabd.exe`. Here's my `Osu.txt` preset for example:
-```
-cx 80.41049
-cy 85
-w  100
-h  56.222546
-r  -90
-m  mouse
+tabd uses presets for configuration stored in a simple `.json` files under `presets` folder which is in the
+same directory as `tabd.exe`. Here's my `Osu.json` preset for example:
+```json
+{
+    "center": [80.41049, 85],
+    "size": [100, 56.222546],
+    "rotation": 90,
+    "ink": false
+}
 ```
 
-The `cx`, `cy`, `w`, `h` and `r` parameters define what part of the tablet area should be mapped to the screen
-and how much it should be rotated. These are the same values OTD uses so you don't have to calculate them
-yourself. `m` however can be either `mouse`, which makes the driver emulate normal mouse cursor, or `ink`
-which emulates Windows Ink inputs that support pressure levels.
+The `center`, `size`, and `rotation` parameters define what part of the tablet area should be mapped to the
+screen and how much it should be rotated. These are the same values OTD uses so you don't have to calculate
+them yourself. `ink` either makes the driver emulate Windows Ink inputs that support pressure levels or a
+normal mouse cursor.
 
 ## Supported Tablets
 

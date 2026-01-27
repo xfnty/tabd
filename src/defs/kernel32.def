@@ -16,5 +16,14 @@ WaitForSingleObject
 CreateThread
 SetEvent
 GetModuleHandleW
+lstrlenA
 lstrlenW
 lstrcpynW
+FindFirstFileW
+FindNextFileW
+CreateFileW
+ReadFile
+CloseHandle
+MultiByteToWideChar
+RtlCopyMemory
+RtlZeroMemory
