@@ -28,24 +28,16 @@ If you want to do it yourself, see [tablets.c][tablets.c] file.
 
 ## Developing
 
-If you don't have compiler installed, use [build steps for TCC][tcc-steps].
-
-To test the build with all compilers, run `project build-msvc run build-gcc run build-tcc run`.
+To test the build with all compilers, run `project build-msvc run build-gcc run`.
 Run `project` to get more info.
 
 ### Compiling using MSVC
 
 1. Download [Build Tools for Visual Studio][vstools].
-2. Run Visual Studio Installer and select `MSVC Build Tools for x64/x86 (Latest)` in `Individual components`.
+2. Run Visual Studio Installer and select `MSVC Build Tools for x64/x86 (Latest)` and `Windows 11 SDK` in 
+   `Individual components`.
 3. Enable [x64 Native Tools Command Prompt for VS][vs64] (32-bit architecture is not supported).
 4. Run `project build-msvc run`.
-
-### Compiling using Tiny C Compiler
-
-1. Download [TCC][tcc] and extract it to any folder.
-2. Open `Settings > System > About > Advanced system settings (Related settings) > Environment Variables... > System variables > Path > Edit... > New`
-   and paste there path to the extracted folder containing `tcc.exe`.
-4. Run `project build-tcc run`.
 
 ### Compiling using GCC
 
@@ -56,8 +48,6 @@ Run `project` to get more info.
 [email]: mailto:xfnty.x@gmail.com
 [support-issue]: https://github.com/xfnty/tabd/issues/new?template=tablet-support-request.md
 [tablets.c]: https://github.com/xfnty/tabd/blob/main/src/tablets.c
-[tcc-steps]: https://github.com/xfnty/tabd?tab=readme-ov-file#compiling-using-tiny-c-compiler
 [vstools]: https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2026
 [vs64]: https://learn.microsoft.com/en-us/cpp/build/how-to-enable-a-64-bit-visual-cpp-toolset-on-the-command-line?view=msvc-170
-[tcc]: https://bellard.org/tcc/
 [w64dk]: https://github.com/skeeto/w64devkit/releases/latest

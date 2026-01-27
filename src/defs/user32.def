@@ -11,3 +11,4 @@ DestroyWindow
 DefWindowProcW
 TranslateMessage
 DispatchMessageW
+LoadIconW

@@ -58,7 +58,7 @@ typedef const WCHAR *PCWSTR, *LPCWSTR;
 typedef int32_t BOOL, LONG;
 typedef uint32_t DWORD, *LPDWORD, UINT, ULONG;
 typedef int64_t LONG_PTR, LPARAM, LRESULT;
-typedef uint64_t ULONG_PTR, SIZE_T, WPARAM;
+typedef uint64_t ULONG_PTR, DWORD_PTR, SIZE_T, WPARAM;
 typedef void *PVOID, *LPVOID, *HANDLE, *HWND, *HICON, *HINSTANCE, *HCURSOR, *HBRUSH, *HMODULE, *HMENU;
 
 typedef struct _LIST_ENTRY _LIST_ENTRY;
@@ -173,7 +173,17 @@ typedef struct tagWNDCLASSEXW {
 #define WAIT_OBJECT_0         0x00000000L
 #define WM_USER               0x0400
 #define WM_QUIT               0x0012
+#define WM_LBUTTONDOWN        0x0201
 #define PM_NOREMOVE           0x0000
+#define NIF_MESSAGE           0x00000001
+#define NIF_ICON              0x00000002
+#define NIF_TIP               0x00000004
+#define NIM_ADD               0x00000000
+#define NIM_MODIFY            0x00000001
+#define NIM_DELETE            0x00000002
+#define MAKEINTRESOURCEW(_i)   ((LPCWSTR)((ULONG_PTR)((WORD)(_i))))
+#define LOWORD(l)              ((WORD)(((DWORD_PTR)(l)) & 0xffff))
+#define HIWORD(l)              ((WORD)((((DWORD_PTR)(l)) >> 16) & 0xffff))
 
 /* kernel32.dll */
 DWORD GetLastError();
@@ -208,6 +218,7 @@ HMODULE WINAPI GetModuleHandleW(LPCWSTR lpModuleName);
 /* shlwapi.dll */
 int wnsprintfW(PWSTR buffer, int maxsize, PCWSTR format, ...); /* doesn't support %f or %p */
 int wvnsprintfW(PWSTR buffer, int maxsize, PCWSTR format, va_list args);
+BOOL Shell_NotifyIconW(DWORD dwMessage, PNOTIFYICONDATAW lpData);
 
 /* user32.dll */
 BOOL PeekMessageW(LPMSG lpMsg, HWND hWnd, UINT wMsgFilterMin, UINT wMsgFilterMax, UINT wRemoveMsg);
@@ -233,5 +244,6 @@ BOOL WINAPI DestroyWindow(HWND hWnd);
 LRESULT WINAPI DefWindowProcW(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
 BOOL WINAPI TranslateMessage(const MSG *lpMsg);
 LRESULT WINAPI DispatchMessageW(const MSG *lpMsg);
+HICON WINAPI LoadIconW(HINSTANCE hInstance, LPCWSTR lpIconName);
 
 #endif

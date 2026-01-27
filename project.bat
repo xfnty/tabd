@@ -15,8 +15,6 @@ for %%a in (%*) do (
         call :Clean || exit /b 1
     ) else if "%%a"=="build-msvc" (
         call :BuildMSVC || exit /b 1
-    ) else if "%%a"=="build-tcc" (
-        call :BuildTCC || exit /b 1
     ) else if "%%a"=="build-gcc" (
         call :BuildGCC || exit /b 1
     ) else if "%%a"=="run" (
@@ -34,9 +32,8 @@ echo Usage: project [command...]
 echo.
 echo Available commands:
 echo   clean      Remove temporary files.
-echo   build-msvc Build using MSVC Compiler (https://visualstudio.microsoft.com/downloads).
-echo   build-tcc  Build using Tiny C Compiler (https://bellard.org/tcc).
-echo   build-gcc  Build using GNU C Compiler (https://github.com/skeeto/w64devkit).
+echo   build-msvc Build using MSVC toolchain (https://visualstudio.microsoft.com/downloads).
+echo   build-gcc  Build using MinGW toolchain (https://github.com/skeeto/w64devkit).
 echo   run        Run the executable.
 echo.
 echo Temporary directory: %temp_dir%
@@ -54,47 +51,22 @@ mkdir %output_dir% !temp_dir_cc! 2> nul
 set links=
 for /r "%source_dir%" %%a in (*.def) do (
     set links=%%~na.lib !links!
-    set should_generate=0
-    if not exist "!temp_dir_cc!%%~na.lib" set should_generate=1
-    if "!should_generate!"=="0" (
-        xcopy /D /L /Y "%%a" "!temp_dir_cc!%%~na.lib" | FINDSTR /E /C:".def" >nul
-        if !errorlevel! equ 0 set should_generate=1
-    )
-    if "!should_generate!"=="1" (
-        echo %%~na.lib
+    call :Generate "%%a" "!temp_dir_cc!%%~na.lib" && (
         lib /nologo /wx /def:"%%a" /out:"!temp_dir_cc!%%~na.lib" /machine:x64 > "!temp_dir_cc!%%~na.txt" || (
             type "!temp_dir_cc!%%~na.txt"
             exit /b 1
         )
     )
 )
-set unity=!temp_dir_cc!msvc-unity
-:: 4820 - padding bytes in struct
-:: 4255 - no 'void' in empty arg lists
-:: 5250 - '__va_start' intrinsic not declared
-set cflags=/std:c11 /GS- /Z7 /Wall /wd4820 /wd4255 /wd5250 /I "%source_dir%." "%unity%.c"
-set oflags=/Fo:"%unity%.obj" /Fe:"%exe%"
-set lflags=/link /LIBPATH:"!temp_dir_cc!" /debug /entry:_start /INCREMENTAL:NO /NODEFAULTLIB ^
-/subsystem:windows
-set compile_command=cl /nologo %cflags% !links! %oflags% %lflags%
-echo /* !compile_command! */> "%unity%.c"
-for /r "%source_dir%" %%a in (*.c) do echo #include "%%a">> "%unity%.c"
-%compile_command% || exit /b 1
-exit /b 0
-
-
-:BuildTCC
-echo !esc![1;90mCompiling using !esc![1;34mTCC!esc![0m
-set temp_dir_cc=%temp_dir%tcc\
-mkdir %output_dir% !temp_dir_cc! 2> nul
-set links=
-for /r "%source_dir%" %%a in (*.def) do set links=-l%%~na !links!
-set unity=!temp_dir_cc!tcc-unity
-set compile_command=tcc -nostdlib -nostdinc -Wall -Wunsupported -Wwrite-strings -Wl,-subsystem=windows ^
--L"%source_dir%." -I"%source_dir%." -o "%exe%" "%unity%.c" !links!
-echo /* %compile_command% */> "%unity%.c"
-for /r "%source_dir%" %%a in (*.c) do echo #include "%%a">> "%unity%.c"
-echo tcc-unity.c && %compile_command% || exit /b 1
+call :Generate "%root_dir%res\icon.rc" "!temp_dir_cc!icon.res" && (
+    rc /nologo /i "%source_dir%." /fo "!temp_dir_cc!icon.res" "%root_dir%res\icon.rc" || exit /b 1
+)
+set unity=!temp_dir_cc!unity
+set cmd=cl /nologo /std:c11 /GS- /Z7 /Wall /wd4820 /wd4255 /wd5250 ^
+/I "%source_dir%." "%unity%.c" "!temp_dir_cc!icon.res" !links! /Fo:"%unity%.obj" /Fe:"%exe%" ^
+/link /LIBPATH:"!temp_dir_cc!." /debug /entry:_start /INCREMENTAL:NO /NODEFAULTLIB /subsystem:windows
+call :GenerateUnity "%unity%.c" "!cmd!"
+%cmd% || exit /b 1
 exit /b 0
 
 
@@ -105,14 +77,7 @@ mkdir %output_dir% !temp_dir_cc! 2> nul
 set links=
 for /r "%source_dir%" %%a in (*.def) do (
     set links="!temp_dir_cc!%%~na.a" !links!
-    set should_generate=0
-    if not exist "!temp_dir_cc!%%~na.lib" set should_generate=1
-    if "!should_generate!"=="0" (
-        xcopy /D /L /Y "%%a" "!temp_dir_cc!%%~na.lib" | FINDSTR /E /C:".def" >nul
-        if !errorlevel! equ 0 set should_generate=1
-    )
-    if "!should_generate!"=="1" (
-        echo %%~na.a
+    call :Generate "%%a" "!temp_dir_cc!%%~na.lib" && (
         dlltool -d "%%a" -l "!temp_dir_cc!%%~na.a" > "!temp_dir_cc!%%~na.txt" || exit /b 1
         lib /nologo /wx /def:"%%a" /out:"!temp_dir_cc!%%~na.lib" /machine:x64 > "!temp_dir_cc!%%~na.txt" || (
             type "!temp_dir_cc!%%~na.txt"
@@ -120,12 +85,14 @@ for /r "%source_dir%" %%a in (*.def) do (
         )
     )
 )
-set unity=!temp_dir_cc!gcc-unity
-set compile_command=gcc -nostdlib -nostdinc -std=c90 -Wall -Wextra -pedantic -pedantic-errors -Wl,-e,_start ^
--L"!temp_dir_cc!." -I"%source_dir%." -o "%exe%" "%unity%.c" !links!
-echo /* %compile_command% */> "%unity%.c"
-for /r "%source_dir%" %%a in (*.c) do echo #include "%%a">> "%unity%.c"
-echo gcc-unity.c && %compile_command% || exit /b 1
+call :Generate "%root_dir%res\icon.rc" "!temp_dir_cc!icon.o" && (
+    windres -I"%source_dir%." "%root_dir%res\icon.rc" -o "!temp_dir_cc!icon.o"
+)
+set unity=!temp_dir_cc!unity
+set cc=gcc -nostdlib -nostdinc -std=c90 -Wall -Wextra -pedantic -pedantic-errors -Wl,-e,_start ^
+-L"!temp_dir_cc!." -I"%source_dir%." -o "%exe%" "%unity%.c" "!temp_dir_cc!icon.o" !links!
+call :GenerateUnity "%unity%.c" "%cc%"
+echo unity.c && %cc% || exit /b 1
 exit /b 0
 
 
@@ -135,4 +102,22 @@ start "" /d "%output_dir%." /b /wait "%exe%"
 if !errorlevel! neq 0 (
     echo !esc![1;90mExited with code !esc![1;31m!errorlevel!!esc![0m
 )
+exit /b 0
+
+
+:IsFileNewerThan :: source destination
+if not exist "%2" exit /b 0
+xcopy /D /L /Y "%1" "%2" | FINDSTR /E /C:"%~nx1" >nul && exit /b 0
+exit /b 1
+
+
+:GenerateUnity :: destination "compile_command"
+echo /* %~2 */> %1
+for /r "%source_dir%" %%a in (*.c) do echo #include "%%a">> %1
+exit /b 0
+
+
+:Generate :: source destination
+call :IsFileNewerThan %1 %2 || exit /b 1
+echo !esc![1;90mGenerating %~nx2!esc![0m
 exit /b 0

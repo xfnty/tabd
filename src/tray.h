@@ -6,7 +6,7 @@
 #define WM_TRAY_EXIT   (WM_USER+1)
 #define WM_TRAY_PRESET (WM_USER+2)
 
-void Tray_Init();
+void Tray_Init(DWORD reciever_thread_id);
 void Tray_Cleanup();
 
 #endif

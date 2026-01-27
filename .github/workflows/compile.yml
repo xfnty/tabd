@@ -16,20 +16,6 @@ jobs:
         arch: amd64
     - name: Compile
       run: ./project build-msvc
-  tcc:
-    runs-on: windows-latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: Install TCC
-      shell: powershell
-      run: |
-        Invoke-WebRequest -Uri https://download.savannah.gnu.org/releases/tinycc/tcc-0.9.27-win64-bin.zip `
-        -OutFile tcc.zip
-        Expand-Archive -Path tcc.zip -DestinationPath .
-        echo $PWD\tcc | Out-File -FilePath $env:GITHUB_PATH -Append
-    - name: Compile
-      shell: cmd
-      run: project.bat build-tcc
   gcc:
     runs-on: windows-latest
     steps:
