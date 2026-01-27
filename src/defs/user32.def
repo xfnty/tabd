@@ -12,3 +12,10 @@ DefWindowProcW
 TranslateMessage
 DispatchMessageW
 LoadIconW
+CreateMenu
+DestroyMenu
+CreatePopupMenu
+AppendMenuW
+TrackPopupMenuEx
+GetCursorPos
+SetForegroundWindow

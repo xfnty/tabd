@@ -27,6 +27,7 @@
     typedef unsigned __int64 uint64_t;
     typedef void *va_list;
     #define va_start(_list, _arg) __va_start(&(_list), (_arg))
+    #define Trap() __debugbreak()
 #else
     typedef char  int8_t;
     typedef short int16_t;
@@ -43,22 +44,23 @@
     #endif
     typedef char *va_list;
     #define va_start(_list, _arg) __builtin_va_start((_list), (_arg))
+    #define Trap() __builtin_trap()
 #endif
 
 typedef uint8_t bool;
 #define true 1
 #define false 0
 
-#define ASSERT(_expr) do { if (!(_expr)) ExitProcess(-1); } while(0)
+#define ASSERT(_expr) do { if (!(_expr)) Trap(); } while(0)
 
 /* WinAPI types */
 typedef uint8_t UCHAR;
-typedef uint16_t WCHAR, *PWSTR, WORD, USHORT, ATOM;
+typedef uint16_t WCHAR, *PWSTR, *LPWSTR, WORD, USHORT, ATOM;
 typedef const WCHAR *PCWSTR, *LPCWSTR;
 typedef int32_t BOOL, LONG;
 typedef uint32_t DWORD, *LPDWORD, UINT, ULONG;
 typedef int64_t LONG_PTR, LPARAM, LRESULT;
-typedef uint64_t ULONG_PTR, DWORD_PTR, SIZE_T, WPARAM;
+typedef uint64_t ULONG_PTR, UINT_PTR, DWORD_PTR, SIZE_T, WPARAM;
 typedef void *PVOID, *LPVOID, *HANDLE, *HWND, *HICON, *HINSTANCE, *HCURSOR, *HBRUSH, *HMODULE, *HMENU;
 
 typedef struct _LIST_ENTRY _LIST_ENTRY;
@@ -174,6 +176,7 @@ typedef struct tagWNDCLASSEXW {
 #define WM_USER               0x0400
 #define WM_QUIT               0x0012
 #define WM_LBUTTONDOWN        0x0201
+#define WM_RBUTTONDOWN        0x0204
 #define PM_NOREMOVE           0x0000
 #define NIF_MESSAGE           0x00000001
 #define NIF_ICON              0x00000002
@@ -181,6 +184,14 @@ typedef struct tagWNDCLASSEXW {
 #define NIM_ADD               0x00000000
 #define NIM_MODIFY            0x00000001
 #define NIM_DELETE            0x00000002
+#define TPM_NONOTIFY          0x0080L
+#define TPM_RETURNCMD         0x0100L
+#define MF_STRING             0x00000000L
+#define MF_GRAYED             0x00000001L
+#define MF_DISABLED           0x00000002L
+#define MF_CHECKED            0x00000008L
+#define MF_SEPARATOR          0x00000800L
+#define MF_POPUP              0x00000010L
 #define MAKEINTRESOURCEW(_i)   ((LPCWSTR)((ULONG_PTR)((WORD)(_i))))
 #define LOWORD(l)              ((WORD)(((DWORD_PTR)(l)) & 0xffff))
 #define HIWORD(l)              ((WORD)((((DWORD_PTR)(l)) >> 16) & 0xffff))
@@ -214,10 +225,14 @@ HANDLE CreateEventW(PVOID lpEventAttributes, BOOL bManualReset, BOOL bInitialSta
 BOOL SetEvent(HANDLE hEvent);
 DWORD WaitForSingleObject(HANDLE hHandle, DWORD dwMilliseconds);
 HMODULE WINAPI GetModuleHandleW(LPCWSTR lpModuleName);
+int lstrlenW(LPCWSTR lpString);
+LPWSTR lstrcpynW(LPWSTR dest, LPCWSTR src, int n);
 
 /* shlwapi.dll */
 int wnsprintfW(PWSTR buffer, int maxsize, PCWSTR format, ...); /* doesn't support %f or %p */
 int wvnsprintfW(PWSTR buffer, int maxsize, PCWSTR format, va_list args);
+
+/* shell32.dll */
 BOOL Shell_NotifyIconW(DWORD dwMessage, PNOTIFYICONDATAW lpData);
 
 /* user32.dll */
@@ -245,5 +260,12 @@ LRESULT WINAPI DefWindowProcW(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 BOOL WINAPI TranslateMessage(const MSG *lpMsg);
 LRESULT WINAPI DispatchMessageW(const MSG *lpMsg);
 HICON WINAPI LoadIconW(HINSTANCE hInstance, LPCWSTR lpIconName);
+HMENU WINAPI CreateMenu();
+BOOL WINAPI DestroyMenu(HMENU hMenu);
+HMENU CreatePopupMenu();
+BOOL AppendMenuW(HMENU hMenu, UINT uFlags, UINT_PTR uIDNewItem, LPCWSTR lpNewItem);
+BOOL TrackPopupMenuEx(HMENU hMenu, UINT uFlags, int x, int y, HWND hwnd, PVOID lptpm);
+BOOL GetCursorPos(LPPOINT lpPoint);
+BOOL SetForegroundWindow(HWND hWnd);
 
 #endif

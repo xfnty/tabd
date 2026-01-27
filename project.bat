@@ -62,7 +62,7 @@ call :Generate "%root_dir%res\icon.rc" "!temp_dir_cc!icon.res" && (
     rc /nologo /i "%source_dir%." /fo "!temp_dir_cc!icon.res" "%root_dir%res\icon.rc" || exit /b 1
 )
 set unity=!temp_dir_cc!unity
-set cmd=cl /nologo /std:c11 /GS- /Z7 /Wall /wd4820 /wd4255 /wd5250 ^
+set cmd=cl /nologo /std:c11 /GS- /Z7 /Wall /wd4820 /wd4255 /wd5250 /wd5045 ^
 /I "%source_dir%." "%unity%.c" "!temp_dir_cc!icon.res" !links! /Fo:"%unity%.obj" /Fe:"%exe%" ^
 /link /LIBPATH:"!temp_dir_cc!." /debug /entry:_start /INCREMENTAL:NO /NODEFAULTLIB /subsystem:windows
 call :GenerateUnity "%unity%.c" "!cmd!"

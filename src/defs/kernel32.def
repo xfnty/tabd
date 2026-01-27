@@ -16,3 +16,5 @@ WaitForSingleObject
 CreateThread
 SetEvent
 GetModuleHandleW
+lstrlenW
+lstrcpynW
